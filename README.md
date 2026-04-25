@@ -1,7 +1,7 @@
 # `impop_k` — workshop session
 
 Student-facing materials for a hands-on session at the
-[MEMPANG pangenomics workshop](https://pangenome.github.io/MemPanG25/).
+[MEMPANG pangenomics workshop](https://pangenome.github.io/MemPanG26/).
 
 The day before, you used `impg similarity` to compute a per-window
 pairwise identity matrix from pangenome alignments. Today you will

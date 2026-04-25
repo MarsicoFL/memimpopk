@@ -61,12 +61,6 @@
 \maketitle
 
 \noindent
-\textbf{Time budget.} 45 minutes. Compute time across the entire tutorial is
-a few seconds; the rest of the time is reading outputs, plotting, and
-answering interpretation questions. Work alone or in pairs.
-
-\vspace{0.4em}
-\noindent
 \textbf{Setup assumptions.} You have the \texttt{workshop/} directory on disk
 (cloned from the course repository), the four pre-built binaries in
 \texttt{workshop/bin/}, the precomputed identity matrices in
@@ -89,7 +83,7 @@ of \texttt{chr12} --- roughly 40 to 130 Mb --- staying clear of the
 centromere at $\sim$34--38 Mb and of both telomeres. The arm gives us
 enough length to resolve recombination breakpoints visually.
 
-\section{Setup (3 min)}
+\section{Setup}
 
 \begin{cmd}
 \$ cd workshop \\
@@ -110,7 +104,7 @@ laptop with a more recent \texttt{glibc} or to build them from source
 (\texttt{cargo build --release} in the impop repository).
 \end{warn}
 
-\section{Part 1 --- IBS: looking at identity windows (7 min)}
+\section{Part 1 --- IBS: looking at identity windows}
 
 \subsection*{The dataset}
 
@@ -164,7 +158,7 @@ what produces values that low? (Hint: these are not biology; they are
 technical.)
 \end{quest}
 
-\section{Part 2 --- IBD detection (12 min)}
+\section{Part 2 --- IBD detection}
 
 \subsection*{What we expect to find}
 
@@ -238,7 +232,7 @@ happen to the count of detected segments if you set
 \texttt{--expected-seg-windows} to 5?
 \end{quest}
 
-\section{Part 3 --- Local ancestry inference (16 min)}
+\section{Part 3 --- Local ancestry inference}
 
 \subsection*{How the chimeras and the panel were built}
 
@@ -373,7 +367,7 @@ that tell you about the difference between the marginal posterior
 (forward-backward) and the most-likely-path (Viterbi)?
 \end{quest}
 
-\section{Part 4 --- Grandparent painting of the CEPH pedigree (7 min)}
+\section{Part 4 --- Grandparent painting of the CEPH pedigree}
 
 We swap roles. Instead of a population panel, we use the \emph{four
 grandparents} as four ``populations'' (K=4), and paint each

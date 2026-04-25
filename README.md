@@ -1,70 +1,54 @@
 # `impop_k` — workshop session
 
-Student-facing materials for a 60-minute teaching session at the
+Student-facing materials for a hands-on session at the
 [MEMPANG pangenomics workshop](https://pangenome.github.io/MemPanG25/).
 
-You will go from a per-window pairwise identity matrix (the output of
-`impg similarity` from the previous day) to four downstream inferences
-on the long arm of human chromosome 12:
+The day before, you used `impg similarity` to compute a per-window
+pairwise identity matrix from pangenome alignments. Today you will
+turn that matrix into four kinds of inference on the long arm of
+human chromosome 12 — without ever consulting a phased VCF.
 
-1. **IBS** — explore the identity distribution of the CEPH 1463 platinum pedigree.
-2. **IBD** — recover sibling- and grandparent-shared segments with a 2-state HMM.
-3. **Local ancestry** — paint five admixed AFR/EUR chimeras against a 20-haplotype reference panel, then look at the per-window forward-backward posteriors and contrast them with Viterbi.
-4. **Pedigree painting** — turn the same CEPH matrix into a K=4 ancestry problem with the four grandparents as "populations", and recover paternal vs. maternal homologs without ever consulting a phased VCF.
-
-Compute time across the whole tutorial is under 10 seconds. Reading
-outputs and answering interpretation questions take ~50 minutes.
+The four parts build on each other. Part 1 (**IBS**) asks what the
+identity values themselves look like in the CEPH 1463 platinum
+pedigree: where do the high-identity tails come from, and what
+produces the suspiciously low ones? Part 2 (**IBD**) feeds the same
+matrix into a 2-state HMM and recovers the multi-megabase segments
+that siblings and grandparents share by descent. Part 3 (**local
+ancestry**) switches to admixed data: five chimeric AFR/EUR
+haplotypes painted against a 20-haplotype reference panel, with a
+side-by-side look at the forward-backward posteriors and the Viterbi
+decoding so you can see where the HMM is confident and where it just
+commits anyway. Part 4 (**pedigree painting**) closes the loop — same
+identity matrix as Part 2, same `ancestry` binary as Part 3, but now
+with the four grandparents as the K=4 panel. The output recovers
+paternal versus maternal homologs in each grandchild, an inference
+the original VCF cannot make on its own.
 
 ## Quickstart
 
 After cloning, from inside this directory:
 
 ```bash
-# 1. Verify your system can run the materials  (~2 seconds)
-bash test_setup.sh
-
-# 2. Open the tutorial
-xdg-open tutorial/tutorial.pdf      # or `open` on macOS
-
-# 3. Follow the tutorial from Section 0
+bash test_setup.sh                # smoke check
+xdg-open tutorial/tutorial.pdf    # or `open` on macOS
 ```
 
-If `test_setup.sh` exits 0 with `OK`, you have everything you need.
+If `test_setup.sh` exits `0` with `OK`, you have everything you need.
+Then follow the tutorial PDF from Section 0.
 
 ## Repository layout
 
 ```
 .
-├── README.md                              this file
-├── LICENSE                                MIT
-├── test_setup.sh                          5-second smoke check
-├── tutorial/
-│   ├── tutorial.tex                       handout source (LaTeX)
-│   └── tutorial.pdf                       compiled handout — read this
-├── bin/                                   pre-built impop binaries (Linux x86_64)
-│   ├── ancestry, ibd, ibs, jacquard
-│   └── README.md
-├── code/
-│   ├── 01_explore_ibs.py                  Part 1
-│   ├── 02_run_ibd.sh                      Part 2
-│   ├── 03_run_ancestry.sh                 Part 3 (Viterbi + posteriors)
-│   ├── 04_plot_painting.py                Part 3 painting
-│   ├── 05_paint_pedigree.sh               Part 4
-│   ├── 06_plot_pedigree_painting.py       Part 4 plot
-│   └── 07_plot_posteriors.py              Part 3 deeper dive (FB vs Viterbi)
-└── data/                                  ~129 MB total
-    ├── identity_chr12_pedigree.tsv        CEPH 1463, chr12:40–130 Mb, 18 haps
-    ├── identity_chr12_admix.tsv           chr12:50–120 Mb, 5 chimeras + 20 panel haps
-    ├── populations.tsv                    AFR/EUR panel for Part 3
-    ├── queries.txt                        chimera queries for Part 3
-    ├── ground_truth_tracts.tsv            simulation truth for Part 3
-    ├── pedigree_populations.tsv           4 grandparents as K=4 panel for Part 4
-    └── pedigree_queries.txt               10 grandchild haplotypes for Part 4
+├── tutorial/tutorial.pdf    the handout — read this
+├── bin/                     pre-built impop binaries (Linux x86_64)
+├── code/                    one script per part (01–07)
+└── data/                    ~129 MB of precomputed identity matrices
 ```
 
-`solutions/` and `figures/student_*.png` are *generated* by the tutorial
-commands and are listed in `.gitignore`. They will appear when you run
-the scripts.
+The `solutions/` directory and `figures/student_*.png` files are
+generated by the tutorial commands and appear once you start running
+them.
 
 ## System requirements
 
@@ -72,76 +56,30 @@ the scripts.
 |---|---|
 | OS | Linux x86_64 (Ubuntu 20.04+, glibc ≥ 2.31) |
 | Python | 3.8+ with `numpy` and `matplotlib` |
-| Bash | 4+ (any modern Linux/macOS shell) |
+| Bash | 4+ |
 | Disk | ~150 MB free |
 
-The pre-built binaries in `bin/` are stripped Linux x86_64 ELFs.
-**They will not run on macOS or Windows directly.** See
-"Other operating systems" below.
-
-## Other operating systems
-
-If `test_setup.sh` reports that the binaries don't run, you have two
-options.
-
-### macOS / Linux ARM / very old glibc — build from source
-
-```bash
-git clone https://github.com/MarsicoFL/impop
-cd impop
-cargo build --release
-cp target/release/{ancestry,ibd,ibs,jacquard} /path/to/this/clone/bin/
-```
-
-This needs Rust 1.70+ (`rustup install stable`).
-
-### Windows — use WSL
-
-The tutorial is bash + Python. Native Windows is not supported.
-[Install WSL2 with Ubuntu](https://learn.microsoft.com/en-us/windows/wsl/install)
-and run the tutorial from inside the WSL shell.
-
-### Workshop VM
-
-If you are at the in-person MEMPANG workshop, the provided VM is a
-recent Ubuntu and runs everything out of the box.
-
-## How to follow the tutorial
-
-1. Run `bash test_setup.sh` — it should print `OK` and exit 0.
-2. Open `tutorial/tutorial.pdf`.
-3. Follow it from Section 0 (Setup) through Section 4 (Grandparent
-   painting). Each part has 3–4 numbered interpretation questions.
+The binaries in `bin/` are stripped Linux x86_64 ELFs and will not
+run natively on macOS or Windows. Windows users should install
+[WSL2 with Ubuntu](https://learn.microsoft.com/en-us/windows/wsl/install)
+and run the tutorial from inside the WSL shell. If you are at the
+in-person MEMPANG workshop, the provided VM is a recent Ubuntu and
+runs everything out of the box; otherwise ask the instructor.
 
 ## How the precomputed data was built
 
 The TSVs in `data/` are subsets of full-chromosome matrices computed
 by `impg similarity` on the HPRCv2 pangenome PAF
-(`hprc465vschm13.aln.paf.gz`) at 10 kb resolution, taken from the
-impop paper validation experiments. Reproducing them from the raw PAF
-takes hours on a workstation; the subsetted versions shipped here are
-ready to use.
+(`hprc465vschm13.aln.paf.gz`) at 10 kb resolution. Reproducing them
+from the raw PAF takes hours on a workstation; the subsetted versions
+shipped here are ready to use as-is.
 
-The chimeras of Part 3 were constructed by mosaic-copying along
-ground-truth tracts from real HPRCv2 assemblies. Each chimera mixes
-one AFR donor (HG01884) with one of five EUR donors (HG00097, HG00099,
-HG00126, HG00128, HG00133). None of the donor samples are in the
-reference panel.
-
-## Source code
-
-The Rust source code for the four binaries in `bin/` lives at
-[`MarsicoFL/impop`](https://github.com/MarsicoFL/impop). This repository
-ships only the pre-built artifacts needed to run the workshop.
-
-## Citation
-
-If you use this material, please credit it as
-
-> Marsico FL, *impop_k workshop*, MEMPANG pangenomics course (2026).
-
-and link to the impop repository:
-[`MarsicoFL/impop`](https://github.com/MarsicoFL/impop).
+The five chimeric query haplotypes of Part 3 were stitched along
+ground-truth tracts from real HPRCv2 assemblies — one AFR donor
+(HG01884) mixed with one of five EUR donors (HG00097, HG00099,
+HG00126, HG00128, HG00133). None of those donors appear in the
+reference panel, so the model has to recognise the donor's population
+without ever having seen the donor itself.
 
 ## License
 

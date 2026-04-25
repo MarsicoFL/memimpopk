@@ -6,7 +6,7 @@ Student-facing materials for a hands-on session at the
 The day before, you used `impg similarity` to compute a per-window
 pairwise identity matrix from pangenome alignments. Today you will
 turn that matrix into four kinds of inference on the long arm of
-human chromosome 12 — without ever consulting a phased VCF.
+human chromosome 12, without ever consulting a phased VCF.
 
 The four parts build on each other. Part 1 (**IBS**) asks what the
 identity values themselves look like in the CEPH 1463 platinum
@@ -18,11 +18,10 @@ ancestry**) switches to admixed data: five chimeric AFR/EUR
 haplotypes painted against a 20-haplotype reference panel, with a
 side-by-side look at the forward-backward posteriors and the Viterbi
 decoding so you can see where the HMM is confident and where it just
-commits anyway. Part 4 (**pedigree painting**) closes the loop — same
+commits anyway. Part 4 (**pedigree painting**) closes the loop, same
 identity matrix as Part 2, same `ancestry` binary as Part 3, but now
 with the four grandparents as the K=4 panel. The output recovers
-paternal versus maternal homologs in each grandchild, an inference
-the original VCF cannot make on its own.
+paternal versus maternal homologs in each grandchild.
 
 ## Quickstart
 
@@ -75,7 +74,7 @@ from the raw PAF takes hours on a workstation; the subsetted versions
 shipped here are ready to use as-is.
 
 The five chimeric query haplotypes of Part 3 were stitched along
-ground-truth tracts from real HPRCv2 assemblies — one AFR donor
+ground-truth tracts from real HPRCv2 assemblies, one AFR donor
 (HG01884) mixed with one of five EUR donors (HG00097, HG00099,
 HG00126, HG00128, HG00133). None of those donors appear in the
 reference panel, so the model has to recognise the donor's population

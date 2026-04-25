@@ -1,0 +1,460 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{amsmath,amssymb}
+\usepackage{titlesec}
+
+\definecolor{accent}{HTML}{4477AA}
+\definecolor{boxbg}{HTML}{F5F5F0}
+\definecolor{boxrule}{HTML}{888888}
+\definecolor{questbg}{HTML}{FFF7E6}
+\definecolor{questrule}{HTML}{CC8800}
+\definecolor{warnbg}{HTML}{FCEEE6}
+\definecolor{warnrule}{HTML}{B8553A}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent,
+}
+
+\graphicspath{{../figures/}}
+
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.5em}{}
+
+\newtcolorbox{cmd}{
+  colback=boxbg, colframe=boxrule, boxrule=0.4pt, arc=2pt,
+  fontupper=\ttfamily\small, left=8pt, right=8pt, top=4pt, bottom=4pt,
+  before skip=8pt, after skip=8pt
+}
+\newtcolorbox{quest}[1][Question]{
+  colback=questbg, colframe=questrule, boxrule=0.5pt, arc=2pt,
+  title=#1, fonttitle=\bfseries\sffamily,
+  left=8pt, right=8pt, top=4pt, bottom=4pt,
+  before skip=8pt, after skip=8pt
+}
+\newtcolorbox{warn}[1][Note]{
+  colback=warnbg, colframe=warnrule, boxrule=0.5pt, arc=2pt,
+  title=#1, fonttitle=\bfseries\sffamily,
+  left=8pt, right=8pt, top=4pt, bottom=4pt,
+  before skip=8pt, after skip=8pt
+}
+
+\title{\textbf{\texttt{impop\_k} hands-on tutorial}\\[0.4em]
+       \large IBS, IBD, and local ancestry from pangenome alignments}
+\author{MEMPANG workshop}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+\textbf{Time budget.} 45 minutes. Compute time across the entire tutorial is
+a few seconds; the rest of the time is reading outputs, plotting, and
+answering interpretation questions. Work alone or in pairs.
+
+\vspace{0.4em}
+\noindent
+\textbf{Setup assumptions.} You have the \texttt{workshop/} directory on disk
+(cloned from the course repository), the four pre-built binaries in
+\texttt{workshop/bin/}, the precomputed identity matrices in
+\texttt{workshop/data/}, and Python 3 with \texttt{numpy} and
+\texttt{matplotlib}. All commands below \emph{must} be run from the
+\texttt{workshop/} directory.
+
+\vspace{0.4em}
+\noindent
+\textbf{Where things came from.} Yesterday you ran \texttt{impg similarity}
+on PAF alignments to obtain pairwise identity per window. The two TSVs in
+\texttt{data/} are exactly that --- precomputed on \texttt{chr12}, so you
+don't pay the cost again today. The reproduction script is
+\texttt{code/regenerate\_data.sh}.
+
+\vspace{0.4em}
+\noindent
+\textbf{Why chr12 long arm.} Every section below works on the long (q) arm
+of \texttt{chr12} --- roughly 40 to 130 Mb --- staying clear of the
+centromere at $\sim$34--38 Mb and of both telomeres. The arm gives us
+enough length to resolve recombination breakpoints visually.
+
+\section{Setup (3 min)}
+
+\begin{cmd}
+\$ cd workshop \\
+\$ ls bin/ data/ code/ \\
+\$ ./bin/ancestry --help | head -3
+\end{cmd}
+
+You should see four binaries (\texttt{ibs}, \texttt{ibd}, \texttt{ancestry},
+\texttt{jacquard}), TSV/text files in \texttt{data/}, and Python/Bash scripts
+in \texttt{code/}. The third command should print three lines of help text
+starting with ``Local ancestry inference''.
+
+\begin{warn}[If something fails]
+If \texttt{./bin/ancestry --help} reports a missing library, your VM's
+\texttt{glibc} is older than the one the binaries were built against
+(2.39). Tell the instructor; the fix is to copy the binaries from a Linux
+laptop with a more recent \texttt{glibc} or to build them from source
+(\texttt{cargo build --release} in the impop repository).
+\end{warn}
+
+\section{Part 1 --- IBS: looking at identity windows (7 min)}
+
+\subsection*{The dataset}
+
+\texttt{data/identity\_chr12\_pedigree.tsv} contains pairwise identity per
+10-kb window for the CEPH 1463 platinum pedigree on
+\texttt{chr12:40--130\,Mb} (the long q arm). Eighteen haplotypes total:
+five full siblings (NA12879, NA12881, NA12882, NA12885, NA12886), the
+two paternal grandparents (NA12889, NA12890), and the two maternal
+grandparents (NA12891, NA12892). The two grandparental couples are
+mutually unrelated.
+
+\begin{cmd}
+\$ head -3 data/identity\_chr12\_pedigree.tsv \\
+\$ wc -l data/identity\_chr12\_pedigree.tsv
+\end{cmd}
+
+Columns: \texttt{chrom, start, end, group.a, group.b, estimated.identity,
+group.a.length, group.b.length}. The \texttt{group} columns are haplotype
+identifiers in \texttt{<sample>\#<hap>} format. About 1.4M pair-window rows.
+
+\subsection*{Run the explorer}
+
+\begin{cmd}
+\$ python3 code/01\_explore\_ibs.py
+\end{cmd}
+
+This loads the TSV, splits the rows into intra-individual pairs
+(e.g.\ \texttt{NA12879\#1} vs.\ \texttt{NA12879\#2}) and inter-individual
+pairs (everything else), and writes
+\texttt{figures/student\_ibs\_histogram.png}. Open it.
+
+\begin{quest}[1.1]
+In this pedigree-only dataset, the intra-individual and inter-individual
+means are extremely close, and the inter-individual mean is in fact
+\emph{slightly higher}. That is counter-intuitive. Why does it make sense
+for this cohort? \emph{Hint: count the related pairs in the
+inter-individual class.}
+\end{quest}
+
+\begin{quest}[1.2]
+The right tail of the histogram concentrates at identity $\ge 0.9995$.
+What biological scenarios produce values that high? Name two distinct
+ones.
+\end{quest}
+
+\begin{quest}[1.3]
+The histogram is plotted on \texttt{[0.985, 1.001]}, but the raw
+\texttt{estimated.identity} column contains values as low as $\sim$0.12.
+From what you know about pangenome alignment to a linear reference,
+what produces values that low? (Hint: these are not biology; they are
+technical.)
+\end{quest}
+
+\section{Part 2 --- IBD detection (12 min)}
+
+\subsection*{What we expect to find}
+
+Full siblings share, on average, 50\% of the genome IBD. On a single 90 Mb
+arm we therefore expect several multi-Mb IBD segments per sibling pair.
+Between \textbf{each sibling and their paternal grandparents}
+(NA12889/NA12890) the expected fraction is 25\%; same between each
+sibling and their maternal grandparents (NA12891/NA12892). Between the
+two grandparental couples, expected IBD is essentially zero.
+
+\subsection*{Run the IBD detector}
+
+\begin{cmd}
+\$ bash code/02\_run\_ibd.sh
+\end{cmd}
+
+This invokes \texttt{bin/ibd} on the pedigree identity matrix and writes
+\texttt{solutions/ibd\_segments.tsv}. The relevant flags:
+
+\begin{cmd}
+--similarity-file data/identity\_chr12\_pedigree.tsv \\
+--region chr12:40000001-130000000 \\
+--size 10000 \\
+--min-len-bp 2000000 \\
+--min-lod 3.0 \\
+--baum-welch-iters 20
+\end{cmd}
+
+\begin{itemize}\setlength{\itemsep}{0.2em}
+  \item \texttt{--min-len-bp 2000000}: minimum reported segment length
+    (2 Mb). Standard value for an arm-scale scan.
+  \item \texttt{--min-lod}: minimum LOD score
+    ($\log_{10} P(\text{data}|\text{IBD}) / P(\text{data}|\neg\text{IBD})$).
+    A value of 3 means the segment is $10^3\times$ more likely under IBD.
+  \item \texttt{--baum-welch-iters 20}: EM iterations for emission
+    parameter learning.
+\end{itemize}
+
+\subsection*{Read the output}
+
+\begin{cmd}
+\$ head -20 solutions/ibd\_segments.tsv
+\end{cmd}
+
+Columns: \texttt{chrom, start, end, group.a, group.b, n\_windows,
+mean\_identity, mean\_posterior, ..., lod\_score}. Each row is one
+detected IBD segment between one haplotype pair.
+
+\begin{quest}[2.1]
+Find one IBD segment between a pair of siblings (any of NA12879, NA12881,
+NA12882, NA12885, NA12886 with another). Write down the interval and the
+LOD score. Bonus: find a pair with more than one multi-Mb IBD segment on
+this arm --- how many breakpoints are implied?
+\end{quest}
+
+\begin{quest}[2.2]
+There are detected ``IBD'' segments between \texttt{NA12892\#1} and
+\texttt{NA12892\#2} --- the two haplotypes of one person --- and also
+between the two haplotypes of \emph{other} grandparents and even of some
+siblings. Strict IBD between the two haplotypes of one diploid individual
+would imply autozygosity. What conservative explanation should you
+consider first, and what would you check to discriminate?
+\end{quest}
+
+\begin{quest}[2.3]
+The HMM has two key transition parameters that you did not tune:
+\texttt{--p-enter-ibd} (default $10^{-4}$) and
+\texttt{--expected-seg-windows} (default 50). What would you expect to
+happen to the count of detected segments if you set
+\texttt{--p-enter-ibd} to $10^{-2}$? What about
+\texttt{--expected-seg-windows} to 5?
+\end{quest}
+
+\section{Part 3 --- Local ancestry inference (16 min)}
+
+\subsection*{How the chimeras and the panel were built}
+
+The five chimeric query haplotypes were stitched from real HPRCv2
+assemblies. Each \texttt{CHIM\_NN\#1} is a mosaic of one AFR donor and
+one EUR donor, copied along ground-truth tracts:
+
+\medskip
+\begin{tabular}{@{}llll@{}}
+\toprule
+chimera & AFR donor & EUR donor & ground-truth tracts \\
+\midrule
+CHIM\_00\#1 & HG01884 & HG00097 & \texttt{data/ground\_truth\_tracts.tsv} \\
+CHIM\_01\#1 & HG01884 & HG00099 & \texttt{...} \\
+CHIM\_02\#1 & HG01884 & HG00126 & \texttt{...} \\
+CHIM\_03\#1 & HG01884 & HG00128 & \texttt{...} \\
+CHIM\_04\#1 & HG01884 & HG00133 & \texttt{...} \\
+\bottomrule
+\end{tabular}
+
+\medskip
+
+The reference panel in \texttt{data/populations.tsv} is a different
+set of 20 HPRCv2 haplotypes: 10 AFR (HG02257, HG02258, HG02280,
+HG02451, HG02572, both \texttt{\#1} and \texttt{\#2}) and 10 EUR
+(HG00140, HG00146, HG00232, HG00253, HG00272, both haps each).
+\textbf{None of the panel samples are donors of the chimeras.} It is
+a fair test: the model has to recognize the donor's population
+without ever having seen the donor.
+
+\subsection*{The dataset}
+
+\texttt{data/identity\_chr12\_admix.tsv} contains pairwise identity
+per 10-kb window for \texttt{chr12:50--120\,Mb} --- 70 Mb in the
+middle of the long q arm. Because 70 Mb is much longer than a
+typical admixture tract, each chimera carries 3--7 ground-truth
+breakpoints in this window.
+
+\subsection*{Run local ancestry inference}
+
+\begin{cmd}
+\$ bash code/03\_run\_ancestry.sh
+\end{cmd}
+
+The relevant flags:
+
+\begin{cmd}
+--similarity-file data/identity\_chr12\_admix.tsv \\
+--query-samples data/queries.txt \\
+--populations data/populations.tsv \\
+--region chr12:50000001-120000000 \\
+--window-size 10000 \\
+--auto-configure \\
+--identity-floor 0.9
+\end{cmd}
+
+\begin{itemize}\setlength{\itemsep}{0.2em}
+  \item \texttt{--auto-configure}: estimates the softmax temperature
+    of the emission model and the pairwise-contrast weight directly from
+    the data. Implies pairwise emissions and parameter estimation.
+  \item \texttt{--identity-floor 0.9}: drops windows whose maximum
+    similarity across the panel is below 0.9 --- usually alignment-gap
+    artifacts.
+\end{itemize}
+
+\subsection*{Inspect the painting}
+
+\begin{cmd}
+\$ head -20 solutions/ancestry\_segments.tsv \\
+\$ python3 code/04\_plot\_painting.py
+\end{cmd}
+
+This produces \texttt{figures/student\_ancestry\_painting.png} with two
+bars per chimera: ``truth'' on top, ``impop'' below. Open it.
+
+\begin{quest}[3.1]
+Pick one chimera and count its ground-truth breakpoints in the 50--120 Mb
+interval. How many of them does the model recover within $\sim$1 Mb?
+Which ones does it miss or hallucinate?
+\end{quest}
+
+\begin{quest}[3.2]
+Scan the five paintings side by side. Are the errors \emph{the same kind}
+across chimeras, or chimera-specific? A recurring error in roughly the
+same genomic region across multiple, independent chimeras suggests a
+property of the \emph{region}, not of the chimeras. Do you see one?
+\end{quest}
+
+\begin{quest}[3.3]
+Look at the \texttt{mean\_posterior} column of the TSV. Several wrong
+calls carry posteriors $\ge 0.9$. How can the model be confidently wrong?
+\emph{Hint: think about the difference between the model being
+confident in its assumptions and the model being correct against reality.}
+\end{quest}
+
+\subsection*{Open the black box: forward-backward, Viterbi, and the raw input}
+
+The TSV you just read is the \emph{Viterbi} decoding: the single most
+likely sequence of ancestry states. The HMM also computes a
+\emph{marginal posterior} per window via forward-backward: the
+probability of each state at each window, integrating over all paths.
+The script invoked \texttt{ancestry} with \texttt{--posteriors-output},
+so you already have these per-window numbers in
+\texttt{solutions/ancestry\_posteriors.tsv}.
+
+\begin{cmd}
+\$ head -3 solutions/ancestry\_posteriors.tsv \\
+\$ python3 code/07\_plot\_posteriors.py
+\end{cmd}
+
+This produces two figures:
+
+\begin{itemize}\setlength{\itemsep}{0.2em}
+  \item \texttt{figures/student\_posterior\_trace.png} for
+    \texttt{CHIM\_03\#1}: ground truth on top, P(AFR) per window in
+    the middle (the marginal posterior), Viterbi-decoded segments at
+    the bottom. The dashed line at $P=0.5$ marks where Viterbi flips.
+  \item \texttt{figures/student\_panel\_similarity.png}: the raw
+    input the HMM emissions see. Per window, $\Delta$ = (max identity
+    to AFR panel) $-$ (max identity to EUR panel), smoothed over
+    250\,kb. Notice how small the contrast is --- median $|\Delta|
+    \approx 1$--$3 \times 10^{-4}$ per single window. The HMM has to
+    chain dozens of windows to make a confident call from such a
+    weak per-window signal.
+\end{itemize}
+
+\begin{quest}[3.4]
+Open \texttt{student\_posterior\_trace.png}. Find a window where
+P(AFR) sits between 0.4 and 0.6: the model is genuinely uncertain
+there. What is Viterbi's call at that same window, and what does
+that tell you about the difference between the marginal posterior
+(forward-backward) and the most-likely-path (Viterbi)?
+\end{quest}
+
+\section{Part 4 --- Grandparent painting of the CEPH pedigree (7 min)}
+
+We swap roles. Instead of a population panel, we use the \emph{four
+grandparents} as four ``populations'' (K=4), and paint each
+grandchild's two haplotypes against them. This is the same HMM, same
+binary, same identity matrix as Part 2 --- only the panel file changes.
+
+\subsection*{The setup}
+
+\begin{cmd}
+\$ cat data/pedigree\_populations.tsv \\
+\$ cat data/pedigree\_queries.txt
+\end{cmd}
+
+Four ``populations'', each containing the two haplotypes of one
+grandparent:
+
+\begin{cmd}
+GP\_PAT  NA12889\#1, NA12889\#2  (paternal grandfather) \\
+GM\_PAT  NA12890\#1, NA12890\#2  (paternal grandmother) \\
+GP\_MAT  NA12891\#1, NA12891\#2  (maternal grandfather) \\
+GM\_MAT  NA12892\#1, NA12892\#2  (maternal grandmother)
+\end{cmd}
+
+The ten queries are the ten haplotypes of the five grandchildren
+(NA12879, NA12881, NA12882, NA12885, NA12886 --- \texttt{\#1} and
+\texttt{\#2} each).
+
+\subsection*{Run the painting}
+
+\begin{cmd}
+\$ bash code/05\_paint\_pedigree.sh \\
+\$ python3 code/06\_plot\_pedigree\_painting.py
+\end{cmd}
+
+This produces \texttt{figures/student\_pedigree\_painting.png}: two
+stacked bars per grandchild, one per haplotype, coloured by inferred
+grandparent of origin.
+
+\subsection*{What you should see}
+
+The opening slide of the talk (``a chromosome inherited through a
+pedigree'') is now a concrete result on real data. In particular:
+
+\begin{itemize}\setlength{\itemsep}{0.2em}
+  \item Each grandchild's two haplotypes split cleanly: one is a mosaic
+    of \emph{only} GP\_PAT + GM\_PAT blocks (paternal homolog), the
+    other of \emph{only} GP\_MAT + GM\_MAT blocks (maternal homolog).
+  \item Breakpoints within a homolog mark actual meiotic recombinations
+    in the mother or father of the CEPH family.
+  \item The VCF never told us which haplotype index (\texttt{\#1} or
+    \texttt{\#2}) was paternal. The painting does.
+\end{itemize}
+
+\begin{quest}[4.1]
+For one grandchild of your choice, tell me which of
+\texttt{\#1} and \texttt{\#2} is paternal and which is maternal. Justify
+from the figure, not from the FASTA headers.
+\end{quest}
+
+\begin{quest}[4.2]
+Pick a grandchild with $\ge 2$ breakpoints on one homolog in the
+40--130 Mb window. How many generations of meiotic recombination do
+those breakpoints represent (think about which parent generated them)?
+\end{quest}
+
+\begin{quest}[4.3]
+If the model ever placed a GP\_MAT block on the same homolog as a
+GP\_PAT block, that would be biologically impossible --- a grandchild
+cannot receive one homolog from both father and mother. Do you see any
+such violations in your figure? If yes, what would be the first thing
+you would check before blaming the biology?
+\end{quest}
+
+\section*{Hand-in (optional)}
+
+If your instructor asks: write a 1-paragraph summary covering
+(a) one thing you found in the IBS histogram that was not obvious before,
+(b) one IBD segment you can confidently call between two named
+haplotypes, (c) one ancestry call from Part 3 where the model is wrong
+with high confidence and what that tells you about calibration, and
+(d) which grandchild haplotype indices (\texttt{\#1} vs \texttt{\#2})
+you concluded to be paternal vs maternal from Part 4.
+
+\end{document}

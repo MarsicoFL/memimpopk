@@ -61,6 +61,12 @@
 \maketitle
 
 \noindent
+\textbf{Time budget.} 45 minutes. Compute time across the entire tutorial is
+a few seconds; the rest of the time is reading outputs, plotting, and
+answering interpretation questions. Work alone or in pairs.
+
+\vspace{0.4em}
+\noindent
 \textbf{Setup assumptions.} You have the \texttt{workshop/} directory on disk
 (cloned from the course repository), the four pre-built binaries in
 \texttt{workshop/bin/}, the precomputed identity matrices in
@@ -83,7 +89,7 @@ of \texttt{chr12} --- roughly 40 to 130 Mb --- staying clear of the
 centromere at $\sim$34--38 Mb and of both telomeres. The arm gives us
 enough length to resolve recombination breakpoints visually.
 
-\section{Setup}
+\section{Setup (3 min)}
 
 \begin{cmd}
 \$ cd workshop \\
@@ -104,7 +110,7 @@ laptop with a more recent \texttt{glibc} or to build them from source
 (\texttt{cargo build --release} in the impop repository).
 \end{warn}
 
-\section{Part 1 --- IBS: looking at identity windows}
+\section{Part 1 --- IBS: looking at identity windows (7 min)}
 
 \subsection*{The dataset}
 
@@ -137,17 +143,21 @@ pairs (everything else), and writes
 \texttt{figures/student\_ibs\_histogram.png}. Open it.
 
 \begin{quest}[1.1]
-In this pedigree-only dataset, the intra-individual and inter-individual
-means are extremely close, and the inter-individual mean is in fact
-\emph{slightly higher}. That is counter-intuitive. Why does it make sense
-for this cohort? \emph{Hint: count the related pairs in the
-inter-individual class.}
-\end{quest}
-
-\begin{quest}[1.2]
 The right tail of the histogram concentrates at identity $\ge 0.9995$.
 What biological scenarios produce values that high? Name two distinct
 ones.
+\end{quest}
+
+\begin{quest}[1.2]
+In this pedigree-only dataset, the intra-individual and inter-individual
+means are extremely close, and the inter-individual mean is in fact
+\emph{slightly higher}. That is counter-intuitive. Why does it make sense
+for this cohort? \emph{Background you need:} the intra-individual class
+is hap1-vs-hap2 of the \emph{same} person --- two largely unrelated
+homologs. The inter-individual class includes every sibling--sibling and
+sibling--grandparent pair in the cohort, and those pairs share large IBD
+tracts ($\sim$50\% and $\sim$25\% respectively). Use that to explain the
+direction of the gap.
 \end{quest}
 
 \begin{quest}[1.3]
@@ -158,7 +168,17 @@ what produces values that low? (Hint: these are not biology; they are
 technical.)
 \end{quest}
 
-\section{Part 2 --- IBD detection}
+\section{Part 2 --- IBD detection (12 min)}
+
+\begin{warn}[If ``HMM'' is new]
+The IBD detector is a 2-state hidden Markov model: each window is in
+state \texttt{IBD} or \texttt{not-IBD}, transitions between adjacent
+windows are calibrated by recombination rate, and the emission
+$P(\text{identity}\mid\text{state})$ is learned by Baum--Welch from the
+data. The flags below (\texttt{--p-enter-ibd},
+\texttt{--baum-welch-iters}) directly control these two HMM ingredients.
+See the talk slide ``HMM in 30 seconds'' for the picture.
+\end{warn}
 
 \subsection*{What we expect to find}
 
@@ -191,7 +211,7 @@ This invokes \texttt{bin/ibd} on the pedigree identity matrix and writes
   \item \texttt{--min-len-bp 2000000}: minimum reported segment length
     (2 Mb). Standard value for an arm-scale scan.
   \item \texttt{--min-lod}: minimum LOD score
-    ($\log_{10} P(\text{data}|\text{IBD}) / P(\text{data}|\neg\text{IBD})$).
+    $\log_{10}\!\bigl[P(\text{data}\mid\text{IBD}) \,/\, P(\text{data}\mid\neg\text{IBD})\bigr]$.
     A value of 3 means the segment is $10^3\times$ more likely under IBD.
   \item \texttt{--baum-welch-iters 20}: EM iterations for emission
     parameter learning.
@@ -232,7 +252,7 @@ happen to the count of detected segments if you set
 \texttt{--expected-seg-windows} to 5?
 \end{quest}
 
-\section{Part 3 --- Local ancestry inference}
+\section{Part 3 --- Local ancestry inference (16 min)}
 
 \subsection*{How the chimeras and the panel were built}
 
@@ -290,9 +310,21 @@ The relevant flags:
 \end{cmd}
 
 \begin{itemize}\setlength{\itemsep}{0.2em}
-  \item \texttt{--auto-configure}: estimates the softmax temperature
-    of the emission model and the pairwise-contrast weight directly from
-    the data. Implies pairwise emissions and parameter estimation.
+  \item \texttt{--auto-configure}: estimates two emission-model
+    knobs from the data, instead of asking you to set them.
+    \begin{itemize}\setlength{\itemsep}{0.1em}
+      \item \emph{Softmax temperature $T$}: rescales per-window
+        similarity differences before turning them into emission
+        probabilities via $\text{softmax}(\Delta/T)$. Small $T$ $\to$
+        sharp commit to one population from tiny similarity gaps;
+        large $T$ $\to$ smooth, conservative posteriors.
+      \item \emph{Pairwise-contrast weight}: how much weight the
+        emission gives to the \emph{difference} between
+        max-similarity-to-population-A and max-similarity-to-B,
+        relative to the absolute identity. High contrast weight
+        emphasizes which panel is closer; low contrast weight makes
+        the emission depend more on raw identity values.
+    \end{itemize}
   \item \texttt{--identity-floor 0.9}: drops windows whose maximum
     similarity across the panel is below 0.9 --- usually alignment-gap
     artifacts.
@@ -367,7 +399,7 @@ that tell you about the difference between the marginal posterior
 (forward-backward) and the most-likely-path (Viterbi)?
 \end{quest}
 
-\section{Part 4 --- Grandparent painting of the CEPH pedigree}
+\section{Part 4 --- Grandparent painting of the CEPH pedigree (7 min)}
 
 We swap roles. Instead of a population panel, we use the \emph{four
 grandparents} as four ``populations'' (K=4), and paint each

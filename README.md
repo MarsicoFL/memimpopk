@@ -36,8 +36,7 @@ modelling choices and the tutorial provides a guided execution path.
 ```
 .
 ├── presentation/
-│   ├── slides.tex                15-minute Beamer talk (sources)
-│   └── slides.pdf                compiled deck
+│   └── slides.pdf                15-minute Beamer talk (compiled deck)
 ├── tutorial/
 │   ├── tutorial.tex              participant handout (sources)
 │   ├── tutorial.pdf              compiled handout (~50 min)
@@ -152,14 +151,16 @@ donor samples appear in the reference panel, so inference is
 performed against a held-out set of haplotypes representative of —
 but not identical to — the donor populations.
 
-## Reproducing the pre-built PDFs
+## Reproducing the pre-built tutorial PDFs
+
+The tutorial sources are distributed; two `pdflatex` passes are
+sufficient for cross-references.
 
 ```bash
-cd presentation && pdflatex slides.tex
-cd ../tutorial  && pdflatex tutorial.tex && pdflatex tutorial_solutions.tex
+cd tutorial && pdflatex tutorial.tex && pdflatex tutorial_solutions.tex
 ```
 
-Two passes per document are sufficient for cross-references.
+The presentation is distributed only as a compiled PDF.
 
 ## Citation
 

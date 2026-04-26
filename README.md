@@ -1,8 +1,8 @@
 # `impop_k` — workshop materials
 
-Teaching materials accompanying a 60-minute hands-on session on
-relatedness and ancestry inference from pangenome-derived alignments,
-delivered at the [MEMPANG pangenomics
+Student materials for a 60-minute hands-on session on relatedness and
+ancestry inference from pangenome-derived alignments, delivered at
+the [MEMPANG pangenomics
 workshop](https://pangenome.github.io/MemPanG26/). The session
 demonstrates how a per-window pairwise identity matrix produced by
 `impg similarity` can be turned into four downstream inferences —
@@ -10,10 +10,8 @@ identity-by-state structure, identity-by-descent segments, local
 ancestry, and pedigree painting — without an intermediate variant
 catalog.
 
-The repository is intended both as (i) a self-contained workshop kit
-that participants and instructors can deploy on a laptop and (ii) a
-reproducible reference for anyone teaching or extending the same
-material.
+The repository is a self-contained kit that runs on a laptop in
+under ten seconds of compute time.
 
 ## Scope
 
@@ -21,8 +19,7 @@ All four parts operate on the long (q) arm of human chromosome 12,
 in the CEPH 1463 platinum pedigree (Parts 1, 2, 4) or in five
 chimeric AFR/EUR query haplotypes painted against an HPRCv2 reference
 panel (Part 3). The underlying tooling is the `impop_k` suite
-(binaries `ibs`, `ibd`, `ancestry`, `jacquard`); the slides cover the
-modelling choices and the tutorial provides a guided execution path.
+(binaries `ibs`, `ibd`, `ancestry`, `jacquard`).
 
 | Part | Method | Inference target |
 |------|--------|------------------|
@@ -36,12 +33,9 @@ modelling choices and the tutorial provides a guided execution path.
 ```
 .
 ├── presentation/
-│   └── slides.pdf                15-minute Beamer talk (compiled deck)
+│   └── slides.pdf                15-minute Beamer talk
 ├── tutorial/
-│   ├── tutorial.tex              participant handout (sources)
-│   ├── tutorial.pdf              compiled handout (~50 min)
-│   ├── tutorial_solutions.tex    annotated answer key (sources)
-│   └── tutorial_solutions.pdf    compiled answer key (instructors)
+│   └── tutorial.pdf              participant handout (~50 min)
 ├── code/
 │   ├── 01_explore_ibs.py         Part 1
 │   ├── 02_run_ibd.sh             Part 2
@@ -49,30 +43,23 @@ modelling choices and the tutorial provides a guided execution path.
 │   ├── 04_plot_painting.py       Part 3 painting figure
 │   ├── 05_paint_pedigree.sh      Part 4
 │   ├── 06_plot_pedigree_painting.py
-│   ├── 07_plot_posteriors.py     Part 3 — forward–backward vs. Viterbi
-│   └── _make_hmm_diagram.py      builds the HMM schematic used in slides
+│   └── 07_plot_posteriors.py     Part 3 — forward–backward vs. Viterbi
 ├── data/                         precomputed identity matrices and panels (~129 MB)
-├── figures/                      static figures referenced by the LaTeX sources
 ├── bin/                          pre-built `impop_k` binaries (Linux x86_64)
 ├── test_setup.sh                 environment smoke check
 └── LICENSE                       MIT
 ```
 
-Generated artifacts (`solutions/`, `figures/student_*.png`) are
-produced when the tutorial scripts are executed and are excluded from
-version control via `.gitignore`.
+Generated artifacts (`solutions/`, `figures/student_*.png`) appear
+when the tutorial scripts are executed and are excluded from version
+control via `.gitignore`.
 
-## Recommended reading order
-
-For a first encounter with the material, the suggested sequence is:
+## Recommended order
 
 1. `presentation/slides.pdf` — conceptual framing of the four
    inference tasks and the underlying HMM architecture.
 2. `tutorial/tutorial.pdf` — guided execution of the seven scripts in
    `code/`, with interpretation prompts.
-3. `tutorial/tutorial_solutions.pdf` — discussion of the expected
-   outputs and the calibration / model-mismatch points raised by the
-   prompts (intended primarily for instructors).
 
 Total compute time across the entire tutorial is on the order of
 ten seconds on a recent laptop; the remaining session time is spent
@@ -114,7 +101,6 @@ Outputs accumulate under `solutions/` (TSV tables) and `figures/`
 | Operating system | Linux x86_64, glibc ≥ 2.31 (Ubuntu 20.04+) |
 | Python | 3.8+, with `numpy` and `matplotlib` |
 | Shell | bash 4+ |
-| LaTeX (optional) | `pdflatex` with `beamer`, `metropolis`, `tcolorbox`, `tikz` (only required to recompile the PDFs) |
 | Disk | ~150 MB free |
 | Memory | < 300 MB peak resident set across all steps |
 
@@ -150,17 +136,6 @@ donors (HG00097, HG00099, HG00126, HG00128, HG00133). None of the
 donor samples appear in the reference panel, so inference is
 performed against a held-out set of haplotypes representative of —
 but not identical to — the donor populations.
-
-## Reproducing the pre-built tutorial PDFs
-
-The tutorial sources are distributed; two `pdflatex` passes are
-sufficient for cross-references.
-
-```bash
-cd tutorial && pdflatex tutorial.tex && pdflatex tutorial_solutions.tex
-```
-
-The presentation is distributed only as a compiled PDF.
 
 ## Citation
 

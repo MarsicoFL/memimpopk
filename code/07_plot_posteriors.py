@@ -193,6 +193,17 @@ def main() -> int:
         f"{QUERY} — ground truth (top), forward-backward P(AFR) per window (middle), Viterbi segments (bottom)",
         size=13, anchor="middle", va="baseline", color="#222"))
 
+    # legend (top-right, inline with title row)
+    leg_x0 = W - R - 200
+    leg_y = y_title_baseline - 12
+    sw, sh = 18, 12
+    out.append(svg.rect(leg_x0, leg_y, sw, sh, COLORS["AFR"]))
+    out.append(svg.text(leg_x0 + sw + 6, leg_y + sh / 2, "AFR",
+                        size=11, anchor="start", va="middle"))
+    out.append(svg.rect(leg_x0 + 70, leg_y, sw, sh, COLORS["EUR"]))
+    out.append(svg.text(leg_x0 + 70 + sw + 6, leg_y + sh / 2, "EUR",
+                        size=11, anchor="start", va="middle"))
+
     # row labels (truth, Viterbi)
     out.append(svg.text(L - 10, (truth_top + truth_bot) / 2, "truth",
                         size=11, anchor="end", va="middle"))
@@ -298,15 +309,16 @@ def main() -> int:
     delta_top, delta_bot = 130, 590
     x_axis_y2 = delta_bot + 6
 
-    # y-axis for delta — match matplotlib auto-scaling roughly, but using
-    # the data range with a bit of padding.
-    d_lo = min(min(delta_smooth), 0.0) * 1.05
-    d_hi = max(max(delta_smooth), 0.0) * 1.05
-    if d_hi - d_lo < 1e-9:
-        d_lo, d_hi = -0.001, 0.001
-
+    # y-axis for delta — clipped to ±0.0015 (≈ 15× the median |Δ|) so the
+    # typical per-window contrast is legible. A handful of outlier windows
+    # exceed this range; they're drawn at the boundary and flagged with a
+    # small triangular marker so the reader knows the bar is truncated.
+    d_lo, d_hi = -0.0015, 0.0015
     d_h = delta_bot - delta_top
-    def y_delta(d): return delta_top + (1 - (d - d_lo) / (d_hi - d_lo)) * d_h
+
+    def y_delta(d):
+        d_clip = max(d_lo, min(d_hi, d))
+        return delta_top + (1 - (d_clip - d_lo) / (d_hi - d_lo)) * d_h
 
     out = [svg.header(W2, H2)]
 
@@ -318,14 +330,14 @@ def main() -> int:
     out.append(svg.text(
         W2 / 2, title_y2,
         f"Δ = max-AFR − max-EUR per window, 250-kb rolling mean.  "
-        f"median |Δ| = {med_abs_delta:.4f} per single window.",
+        f"median |Δ| = {med_abs_delta:.4f}; y-axis clipped to ±0.0015 "
+        f"(▲▼ mark out-of-range windows).",
         size=11, anchor="middle", va="baseline", color="#222"))
 
     # truth bar
     draw_truth_bar(out, truth, x_to_px2, truth_top2, truth_bot2)
 
     # delta panel: per-window rectangles from y=0 to y=delta_smooth[i].
-    # For each window i, the rect spans the midpoint between i-1 and i+1 on x.
     n = len(pos)
     if n > 0:
         for i in range(n):
@@ -341,8 +353,19 @@ def main() -> int:
             bot = max(y0, y1)
             out.append(svg.rect(x_left, top, x_right - x_left, bot - top,
                                 color, opacity=0.55))
+            # out-of-range marker: small triangle pointing in the direction
+            # of the actual (clipped) value, drawn just inside the boundary
+            if d > d_hi or d < d_lo:
+                cx = (x_left + x_right) / 2
+                if d > d_hi:
+                    yt = delta_top + 2
+                    pts = [(cx - 4, yt + 6), (cx + 4, yt + 6), (cx, yt)]
+                else:
+                    yb = delta_bot - 2
+                    pts = [(cx - 4, yb - 6), (cx + 4, yb - 6), (cx, yb)]
+                out.append(svg.polygon(pts, fill=color, opacity=0.9))
 
-        # smooth black curve overlay
+        # smooth black curve overlay (also clipped)
         line_pts = [(x_to_px2(p), y_delta(d)) for p, d in zip(pos, delta_smooth)]
         out.append(svg.polyline(line_pts, stroke="#222222", stroke_width=0.6))
 

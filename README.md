@@ -39,16 +39,17 @@ panel (Part 3). The underlying tooling is the `impop_k` suite
 │   ├── 04_plot_painting.py       Part 3 painting figure
 │   ├── 05_paint_pedigree.sh      Part 4
 │   ├── 06_plot_pedigree_painting.py
-│   └── 07_plot_posteriors.py     Part 3 — forward–backward vs. Viterbi
+│   ├── 07_plot_posteriors.py     Part 3 — forward–backward vs. Viterbi
+│   └── _svgplot.py               stdlib SVG helpers used by 01/04/06/07
 ├── data/                         precomputed identity matrices and panels (~129 MB)
 ├── bin/                          pre-built `impop_k` binaries (Linux x86_64)
 ├── test_setup.sh                 environment smoke check
 └── LICENSE                       MIT
 ```
 
-Generated artifacts (`solutions/`, `figures/student_*.png`) appear
-when the tutorial scripts are executed and are excluded from version
-control via `.gitignore`.
+Generated artifacts (`solutions/`, `figures/*.svg`) appear when the
+tutorial scripts are executed and are excluded from version control
+via `.gitignore`.
 
 ## Quick start
 
@@ -59,9 +60,10 @@ bash test_setup.sh
 ```
 
 A successful invocation prints `OK` and exits 0. The script verifies
-that the pre-built binaries execute on the host, that `python3` with
-`numpy` and `matplotlib` is available, and that the data files and
-scripts are in place. Any failure prints the missing component and a
+that the pre-built binaries execute on the host, that `python3` (≥ 3.8)
+is available, and that the data files and scripts are in place. The
+plotting scripts use only the Python standard library, so no `pip`
+install is required. Any failure prints the missing component and a
 remediation hint.
 
 To execute the tutorial pipeline end-to-end:
@@ -84,10 +86,13 @@ Outputs accumulate under `solutions/` (TSV tables) and `figures/`
 | Component | Tested configuration |
 |-----------|----------------------|
 | Operating system | Linux x86_64, glibc ≥ 2.31 (Ubuntu 20.04+) |
-| Python | 3.8+, with `numpy` and `matplotlib` |
+| Python | 3.8+ (stdlib only — no numpy / matplotlib required) |
 | Shell | bash 4+ |
 | Disk | ~150 MB free |
 | Memory | < 300 MB peak resident set across all steps |
+
+The plotting scripts emit `figures/*.svg` files; open them in any
+browser, image viewer (Eye of GNOME, Preview.app), or Inkscape.
 
 The shipped binaries in `bin/` are stripped Linux x86_64 ELFs. On
 macOS or ARM Linux they should be rebuilt from source (ask for the code: franco.lmarsico@gmail.com).

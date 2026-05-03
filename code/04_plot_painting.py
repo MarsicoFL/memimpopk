@@ -6,22 +6,21 @@ Reads:
   data/ground_truth_tracts.tsv
 
 Writes:
-  figures/student_ancestry_painting.png
+  figures/ancestry_painting.svg
+
+Pure stdlib — no numpy / matplotlib required.
 """
 
 from collections import defaultdict
 from pathlib import Path
 import sys
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _svgplot as svg
 
 PRED = Path("solutions/ancestry_segments.tsv")
 TRUTH = Path("data/ground_truth_tracts.tsv")
-OUT = Path("figures/ancestry_painting.png")
+OUT = Path("figures/ancestry_painting.svg")
 
 COLORS = {"AFR": "#cc6600", "EUR": "#3366cc"}
 
@@ -48,50 +47,99 @@ def main() -> int:
 
     pred = read_segments(PRED, "sample", "ancestry")
     truth = read_segments(TRUTH, "chim_id", "ancestry")
-
     samples = sorted(pred.keys())
     n = len(samples)
-    fig, ax = plt.subplots(figsize=(11, 1.0 + 0.7 * n))
-    bar_h = 0.32
 
-    all_coords = []
+    # ---- determine genomic span across all samples ----------------------
+    all_coords: list[int] = []
     for s in samples:
         for start, end, _ in truth.get(s, []) + pred.get(s, []):
             all_coords.extend([start, end])
-    x_lo = min(all_coords) / 1e6
-    x_hi = max(all_coords) / 1e6
-    pad = (x_hi - x_lo) * 0.04
-    label_x_left = x_lo - pad * 2.2
-    label_x_right = x_hi + pad * 0.5
+    x_lo_mb = min(all_coords) / 1e6
+    x_hi_mb = max(all_coords) / 1e6
+    pad = (x_hi_mb - x_lo_mb) * 0.04
+
+    # ---- pixel layout ---------------------------------------------------
+    W = 1400
+    row_h = 70
+    H = 80 + row_h * n + 80  # title + rows + axis
+    L_margin = 110
+    R_margin = 110
+    T_margin = 80
+    plot_x = L_margin
+    plot_w = W - L_margin - R_margin
+    plot_y_top = T_margin
+    plot_y_bot = H - 60  # leave 60 px for the bottom axis labels
+    rows_h = plot_y_bot - plot_y_top
+
+    # x-axis maps Mb [x_lo_mb - pad*3, x_hi_mb + pad*3] to [plot_x, plot_x + plot_w]
+    ax_lo = x_lo_mb - pad * 3
+    ax_hi = x_hi_mb + pad * 3
+
+    def x_to_px(mb): return plot_x + (mb - ax_lo) / (ax_hi - ax_lo) * plot_w
+
+    out = [svg.header(W, H)]
+
+    # title
+    out.append(svg.text(
+        W / 2, T_margin - 35,
+        f"Local ancestry painting vs. ground truth — chr12:{int(x_lo_mb)}-{int(x_hi_mb)} Mb",
+        size=15, anchor="middle", va="baseline", color="#222"))
+
+    # legend (top-left)
+    leg_x, leg_y = 30, T_margin - 50
+    sw, sh = 22, 14
+    out.append(svg.rect(leg_x,            leg_y, sw, sh, COLORS["AFR"]))
+    out.append(svg.text(leg_x + sw + 5,   leg_y + sh / 2, "AFR",
+                        size=12, anchor="start", va="middle"))
+    out.append(svg.rect(leg_x + 90,       leg_y, sw, sh, COLORS["EUR"]))
+    out.append(svg.text(leg_x + 90 + sw + 5, leg_y + sh / 2, "EUR",
+                        size=12, anchor="start", va="middle"))
+
+    # rows
+    bar_h = 17
+    label_left_px = x_to_px(x_lo_mb) - 10  # right-aligned at this x
+    label_right_px = x_to_px(x_hi_mb) + 10  # left-aligned at this x
 
     for i, s in enumerate(samples):
-        y_truth = i + 0.18
-        y_pred = i - 0.18
+        # match matplotlib's bottom-up ordering: highest sample index at the
+        # top of the figure, sample 0 at the bottom.
+        row_center = plot_y_top + rows_h * ((n - 1 - i) + 0.5) / n
+        y_truth = row_center - 14
+        y_pred = row_center + 14
+
         for start, end, anc in truth.get(s, []):
-            ax.add_patch(Rectangle((start / 1e6, y_truth - bar_h / 2), (end - start) / 1e6, bar_h,
-                                   facecolor=COLORS.get(anc, "#999999"), edgecolor="white", linewidth=0.5))
+            x0 = x_to_px(start / 1e6)
+            x1 = x_to_px(end / 1e6)
+            out.append(svg.rect(x0, y_truth - bar_h / 2, x1 - x0, bar_h,
+                                COLORS.get(anc, "#999999"),
+                                stroke="white", stroke_width=0.5))
         for start, end, anc in pred.get(s, []):
-            ax.add_patch(Rectangle((start / 1e6, y_pred - bar_h / 2), (end - start) / 1e6, bar_h,
-                                   facecolor=COLORS.get(anc, "#999999"), edgecolor="white", linewidth=0.5))
-        ax.text(label_x_left, y_truth, "truth", ha="right", va="center", fontsize=8, color="#333333")
-        ax.text(label_x_left, y_pred, "impop", ha="right", va="center", fontsize=8, color="#333333")
-        ax.text(label_x_right, i, s, ha="left", va="center", fontsize=9)
+            x0 = x_to_px(start / 1e6)
+            x1 = x_to_px(end / 1e6)
+            out.append(svg.rect(x0, y_pred - bar_h / 2, x1 - x0, bar_h,
+                                COLORS.get(anc, "#999999"),
+                                stroke="white", stroke_width=0.5))
 
-    ax.set_xlim(x_lo - pad * 3, x_hi + pad * 3)
-    ax.set_ylim(-0.7, n - 0.3)
-    ax.set_yticks([])
-    ax.set_xlabel("chr12 position (Mb)")
-    ax.set_title(f"Local ancestry painting vs. ground truth — chr12:{int(x_lo)}-{int(x_hi)} Mb")
-    for sp in ("top", "right", "left"):
-        ax.spines[sp].set_visible(False)
+        out.append(svg.text(label_left_px, y_truth, "truth",
+                            size=11, anchor="end", va="middle", color="#333"))
+        out.append(svg.text(label_left_px, y_pred, "impop",
+                            size=11, anchor="end", va="middle", color="#333"))
+        out.append(svg.text(label_right_px, row_center, s,
+                            size=12, anchor="start", va="middle", color="#222"))
 
-    legend = [Rectangle((0, 0), 1, 1, facecolor=COLORS["AFR"], label="AFR"),
-              Rectangle((0, 0), 1, 1, facecolor=COLORS["EUR"], label="EUR")]
-    ax.legend(handles=legend, loc="upper left", bbox_to_anchor=(0, 1.05), ncol=2, frameon=False)
+    # x-axis along the bottom
+    axis_y = plot_y_bot + 6
+    x_ticks = svg.nice_ticks(int(x_lo_mb), int(x_hi_mb) + 1, target=8)
+    out.append(svg.x_axis(plot_x, axis_y, plot_w, ax_lo, ax_hi, x_ticks,
+                          tick_len=5, label_size=11))
+    out.append(svg.text(plot_x + plot_w / 2, axis_y + 35,
+                        "chr12 position (Mb)",
+                        size=13, anchor="middle", va="baseline"))
 
+    out.append(svg.footer())
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(OUT, dpi=150)
+    OUT.write_text("".join(out))
     print(f"Wrote {OUT}")
     return 0
 

@@ -1,17 +1,13 @@
 # `impop_k` — workshop materials
 
-Student materials for a 60-minute hands-on session on relatedness and
+Materials for the hands-on session on relatedness and
 ancestry inference from pangenome-derived alignments, delivered at
 the [MEMPANG pangenomics
 workshop](https://pangenome.github.io/MemPanG26/). The session
 demonstrates how a per-window pairwise identity matrix produced by
-`impg similarity` can be turned into four downstream inferences —
-identity-by-state structure, identity-by-descent segments, local
-ancestry, and pedigree painting — without an intermediate variant
-catalog.
-
-The repository is a self-contained kit that runs on a laptop in
-under ten seconds of compute time.
+`impg similarity` can be turned into four downstream inferences: (1)
+identity-by-state structure, (2) identity-by-descent segments, (3) local
+ancestry, and (4) pedigree painting, without depending on variant calling, phasing or vcf files.
 
 ## Scope
 
@@ -54,17 +50,6 @@ Generated artifacts (`solutions/`, `figures/student_*.png`) appear
 when the tutorial scripts are executed and are excluded from version
 control via `.gitignore`.
 
-## Recommended order
-
-1. `presentation/slides.pdf` — conceptual framing of the four
-   inference tasks and the underlying HMM architecture.
-2. `tutorial/tutorial.pdf` — guided execution of the seven scripts in
-   `code/`, with interpretation prompts.
-
-Total compute time across the entire tutorial is on the order of
-ten seconds on a recent laptop; the remaining session time is spent
-reading outputs and addressing the interpretation questions.
-
 ## Quick start
 
 From the repository root:
@@ -105,19 +90,9 @@ Outputs accumulate under `solutions/` (TSV tables) and `figures/`
 | Memory | < 300 MB peak resident set across all steps |
 
 The shipped binaries in `bin/` are stripped Linux x86_64 ELFs. On
-macOS or ARM Linux they should be rebuilt from source:
+macOS or ARM Linux they should be rebuilt from source (ask for the code: franco.lmarsico@gmail.com).
 
-```bash
-git clone https://github.com/MarsicoFL/impop
-cd impop && cargo build --release
-cp target/release/{ancestry,ibd,ibs,jacquard} /path/to/this/repo/bin/
-```
-
-This requires Rust 1.70+. Windows users are advised to operate from
-within [WSL2 with
-Ubuntu](https://learn.microsoft.com/en-us/windows/wsl/install). The
-in-person MEMPANG workshop provides a virtual machine on which all
-materials run without additional setup.
+This requires Rust 1.70+. 
 
 ## Construction of the precomputed data
 
@@ -125,28 +100,14 @@ The identity matrices in `data/` are subsets of full-chromosome
 matrices computed by `impg similarity` on the HPRCv2 pangenome PAF
 (`hprc465vschm13.aln.paf.gz`) at 10 kb window resolution. Reproducing
 them from the raw alignment file requires several hours on a
-workstation; the subsetted matrices distributed here are derived from
-the validation experiments of the `impop_k` paper and are sufficient
-for all four tutorial parts.
+workstation.
 
 The five chimeric query haplotypes used in Part 3 were constructed by
 mosaic-copying along ground-truth tracts from real HPRCv2 assemblies.
 Each chimera combines one AFR donor (HG01884) with one of five EUR
 donors (HG00097, HG00099, HG00126, HG00128, HG00133). None of the
 donor samples appear in the reference panel, so inference is
-performed against a held-out set of haplotypes representative of —
-but not identical to — the donor populations.
-
-## Citation
-
-If these materials are reused for teaching or derived work, please
-cite as
-
-> Marsico, F. L. *impop_k workshop*, MEMPANG pangenomics course (2026).
-
-and the underlying tool repository:
-[`MarsicoFL/impop`](https://github.com/MarsicoFL/impop).
-
-## License
+performed against a held-out set of haplotypes representative of,
+but not identical to, the donor populations. Breakpoints were derived from slim simulations.
 
 Released under the MIT License (see `LICENSE`).

@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 PRED = Path("solutions/pedigree_painting.tsv")
-OUT = Path("figures/student_pedigree_painting.png")
+OUT = Path("figures/pedigree_painting.png")
 
 COLORS = {
     "GP_PAT": "#cc6600",

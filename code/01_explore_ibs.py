@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 DATA = Path("data/identity_chr12_pedigree.tsv")
-OUT_HIST = Path("figures/student_ibs_histogram.png")
+OUT_HIST = Path("figures/ibs_histogram.png")
 
 
 def load(path: Path):

@@ -41,8 +41,8 @@ SIM  = Path("data/identity_chr12_admix.tsv")
 POPS = Path("data/populations.tsv")
 TRUTH = Path("data/ground_truth_tracts.tsv")
 
-OUT_TRACE = Path("figures/student_posterior_trace.png")
-OUT_PANEL = Path("figures/student_panel_similarity.png")
+OUT_TRACE = Path("figures/posterior_trace.png")
+OUT_PANEL = Path("figures/panel_similarity.png")
 
 QUERY = "CHIM_03#1"
 COLORS = {"AFR": "#cc6600", "EUR": "#3366cc"}

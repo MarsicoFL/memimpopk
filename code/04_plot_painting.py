@@ -21,7 +21,7 @@ from matplotlib.patches import Rectangle
 
 PRED = Path("solutions/ancestry_segments.tsv")
 TRUTH = Path("data/ground_truth_tracts.tsv")
-OUT = Path("figures/student_ancestry_painting.png")
+OUT = Path("figures/ancestry_painting.png")
 
 COLORS = {"AFR": "#cc6600", "EUR": "#3366cc"}
 

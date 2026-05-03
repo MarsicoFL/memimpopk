@@ -79,7 +79,7 @@ python3 code/06_plot_pedigree_painting.py
 ```
 
 Outputs accumulate under `solutions/` (TSV tables) and `figures/`
-(PNG plots).
+(SVG plots).
 
 ## System requirements
 

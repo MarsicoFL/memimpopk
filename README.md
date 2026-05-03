@@ -31,7 +31,7 @@ panel (Part 3). The underlying tooling is the `impop_k` suite
 ├── presentation/
 │   └── slides.pdf                15-minute Beamer talk
 ├── tutorial/
-│   └── tutorial.pdf              participant handout (~50 min)
+│   └── mempang_tutorial.pdf     participant handout (~50 min)
 ├── code/
 │   ├── 01_explore_ibs.py         Part 1
 │   ├── 02_run_ibd.sh             Part 2

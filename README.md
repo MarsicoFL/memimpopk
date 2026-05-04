@@ -1,4 +1,4 @@
-# `impop_k` — workshop materials
+# `impopk` — workshop materials
 
 Materials for the hands-on session on relatedness and
 ancestry inference from pangenome-derived alignments, delivered at

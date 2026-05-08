@@ -31,7 +31,4 @@ bin/ancestry \
     --output solutions/pedigree_painting.tsv
 
 echo
-echo "Painted segments per grandchild haplotype (first 20):"
-column -t -s $'\t' solutions/pedigree_painting.tsv | awk 'NR<=20'
-echo
 echo "Total decoded segments: $(($(wc -l < solutions/pedigree_painting.tsv) - 1))"

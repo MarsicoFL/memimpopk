@@ -86,7 +86,7 @@ Outputs accumulate under `solutions/` (TSV tables) and `figures/`
 | Component | Tested configuration |
 |-----------|----------------------|
 | Operating system | Linux x86_64, glibc ≥ 2.31 (Ubuntu 20.04+) |
-| Python | 3.8+ (stdlib only — no numpy / matplotlib required) |
+| Python | 3.8+ (stdlib) |
 | Shell | bash 4+ |
 | Disk | ~150 MB free |
 | Memory | < 300 MB peak resident set across all steps |

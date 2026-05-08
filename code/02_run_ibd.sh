@@ -24,7 +24,4 @@ bin/ibd \
     --output solutions/ibd_segments.tsv
 
 echo
-echo "Detected IBD segments (first 40):"
-column -t -s $'\t' solutions/ibd_segments.tsv | awk 'NR<=40'
-echo
 echo "Total segments: $(($(wc -l < solutions/ibd_segments.tsv) - 1))"

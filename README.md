@@ -29,7 +29,7 @@ panel (Part 3). The underlying tooling is the `impop_k` suite
 ```
 .
 ├── presentation/
-│   └── slides.pdf                15-minute Beamer talk
+│   └── slides.pdf                15-20 minutes  talk
 ├── tutorial/
 │   └── mempang_tutorial.pdf     participant handout (~50 min)
 ├── code/

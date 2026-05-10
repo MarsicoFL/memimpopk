@@ -14,8 +14,7 @@ Total: ~6 MB.
 
 ## Provenance
 
-Built from [`MarsicoFL/IMPOPk`](https://github.com/MarsicoFL/IMPOPk)
-with:
+Built from `MarsicoFL/IMPOPk` (to be released soon) with:
 
 ```
 cargo build --release

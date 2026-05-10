@@ -40,6 +40,17 @@ If that fails with a missing-library error, your Linux is older than
 
 ## Rebuild
 
+The full Cargo workspace ships locally in [`../source/`](../source/).
+Build without internet:
+
+```
+cd ../source
+cargo build --release
+cp target/release/{ibs,ibd,ancestry,jacquard} ../bin/
+```
+
+Or clone the upstream:
+
 ```
 git clone https://github.com/MarsicoFL/impop
 cd impop

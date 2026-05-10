@@ -32,8 +32,8 @@ required):
 
 Or clone the upstream:
 
-  git clone https://github.com/MarsicoFL/impop
-  cd impop
+  git clone https://github.com/MarsicoFL/IMPOPk
+  cd IMPOPk
   cargo build --release
   cp target/release/{ancestry,ibd,ibs,jacquard} $WS/bin/
 

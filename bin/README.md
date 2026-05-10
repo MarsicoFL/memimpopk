@@ -14,7 +14,7 @@ Total: ~6 MB.
 
 ## Provenance
 
-Built from [`MarsicoFL/impop`](https://github.com/MarsicoFL/impop)
+Built from [`MarsicoFL/IMPOPk`](https://github.com/MarsicoFL/IMPOPk)
 with:
 
 ```
@@ -52,8 +52,8 @@ cp target/release/{ibs,ibd,ancestry,jacquard} ../bin/
 Or clone the upstream:
 
 ```
-git clone https://github.com/MarsicoFL/impop
-cd impop
+git clone https://github.com/MarsicoFL/IMPOPk
+cd IMPOPk
 cargo build --release
 cp target/release/{ibs,ibd,ancestry,jacquard} /path/to/workshop/bin/
 ```

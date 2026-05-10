@@ -40,22 +40,13 @@ If that fails with a missing-library error, your Linux is older than
 
 ## Rebuild
 
-The full Cargo workspace ships locally in [`../source/`](../source/).
-Build without internet:
+The full Cargo workspace ships locally in [`../source/`](../source/),
+so you can rebuild without internet:
 
 ```
 cd ../source
 cargo build --release
 cp target/release/{ibs,ibd,ancestry,jacquard} ../bin/
-```
-
-Or clone the upstream:
-
-```
-git clone https://github.com/MarsicoFL/IMPOPk
-cd IMPOPk
-cargo build --release
-cp target/release/{ibs,ibd,ancestry,jacquard} /path/to/workshop/bin/
 ```
 
 Requires Rust 1.70+.

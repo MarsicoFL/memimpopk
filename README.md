@@ -43,6 +43,7 @@ panel (Part 3). The underlying tooling is the `impop_k` suite
 │   └── _svgplot.py               stdlib SVG helpers used by 01/04/06/07
 ├── data/                         precomputed identity matrices and panels (~129 MB)
 ├── bin/                          pre-built `impop_k` binaries (Linux x86_64)
+├── source/                       full Cargo workspace for rebuilding the binaries
 ├── test_setup.sh                 environment smoke check
 └── LICENSE                       MIT
 ```
@@ -94,10 +95,46 @@ Outputs accumulate under `solutions/` (TSV tables) and `figures/`
 The plotting scripts emit `figures/*.svg` files; open them in any
 browser, image viewer (Eye of GNOME, Preview.app), or Inkscape.
 
-The shipped binaries in `bin/` are stripped Linux x86_64 ELFs. On
-macOS or ARM Linux they should be rebuilt from source (ask for the code: franco.lmarsico@gmail.com).
+## Installation
 
-This requires Rust 1.70+. 
+There are two ways to obtain the `ibs`, `ibd`, `ancestry`, and
+`jacquard` binaries.
+
+### Option 1 — use the pre-built binaries (default)
+
+The repository ships stripped Linux x86_64 ELFs in `bin/`, dynamically
+linked against `glibc ≥ 2.31` (Ubuntu 20.04+). On a supported host no
+additional setup is required:
+
+```bash
+bash test_setup.sh
+```
+
+A successful invocation prints `OK` and exits 0.
+
+### Option 2 — build from source
+
+The full Cargo workspace is shipped under `source/`. Use this on
+macOS, Linux ARM, older glibc systems, or when you want to inspect or
+modify the algorithms.
+
+**Requirements:** Rust 1.70+ (install via [rustup.rs](https://rustup.rs/))
+and a C linker (`build-essential` on Debian/Ubuntu, Xcode Command Line
+Tools on macOS). No other system libraries beyond `libc`, `libm`,
+`libgcc_s`.
+
+```bash
+cd source
+cargo build --release
+cp target/release/{ibs,ibd,ancestry,jacquard} ../bin/
+```
+
+The release profile already enables `lto = true`, `codegen-units = 1`,
+`strip = true`, and `opt-level = 3`; no extra flags are needed. The
+first build downloads ~80 crates from crates.io; subsequent builds
+work fully offline against your local registry cache. See
+`source/README.md` for the workspace layout and how to run the test
+suite.
 
 ## Construction of the precomputed data
 

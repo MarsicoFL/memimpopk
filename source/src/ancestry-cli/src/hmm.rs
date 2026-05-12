@@ -3724,7 +3724,7 @@ pub fn estimate_switch_prob(
 ///
 /// With more populations in the softmax, the probability mass is spread across
 /// more states, reducing discriminability. Temperature should decrease to
-/// compensate. Uses k=3 as reference (Glossophaga validation case).
+/// compensate. Uses k=3 as reference.
 ///
 /// Based on extreme value theory: the expected maximum of k softmax outputs
 /// scales as √(2 ln k). To maintain the same discrimination level across

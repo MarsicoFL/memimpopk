@@ -129,7 +129,7 @@ RECOMMENDED PARAMETER PRESETS:
   Key findings from validation against RFMix (chr20, 15 AMR samples):
     - Emission model 'max' is critical: 93.2% vs mean 88.7% vs median 86.4%
     - Auto-estimation (--estimate-params) achieves near-optimal 92.9% concordance
-    - Baum-Welch training is counterproductive (degrades concordance by 2-3%)
+    - Baum-Welch: a few iterations help (auto-configure uses 3); long runs can drift
     - Posterior decoding = Viterbi (signal too weak for disagreement)
     - Normalize-emissions is catastrophic (destroys the signal)
     - Coverage-ratio feature provides marginal improvement at best
@@ -788,7 +788,7 @@ struct Args {
 
     /// Scale temperature based on number of populations.
     /// With more populations competing in softmax, temperature should decrease
-    /// to maintain discriminability. Uses k=3 as reference (Glossophaga validation).
+    /// to maintain discriminability. Uses k=3 as reference.
     /// Applied after panel-size scaling.
     #[arg(long = "population-temperature-scaling")]
     population_temperature_scaling: bool,
@@ -1182,7 +1182,7 @@ fn main() -> Result<()> {
     let populations = if let Some(pop_file) = &args.populations {
         load_populations(pop_file)?
     } else {
-        eprintln!("Using default Glossophaga populations");
+        eprintln!("Using default populations");
         glossophaga_populations()
     };
 

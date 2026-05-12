@@ -14,7 +14,7 @@ Total: ~6 MB.
 
 ## Provenance
 
-Built from `MarsicoFL/IMPOPk` (to be released soon) with:
+Built from `MarsicoFL/IMPOPk` with:
 
 ```
 cargo build --release

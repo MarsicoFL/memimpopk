@@ -63,4 +63,4 @@ for s in code/01_explore_ibs.py \
 done
 
 printf '\033[32mOK\033[0m  workshop ready (binaries run, python3 present, data + scripts in place).\n'
-printf '    open tutorial/mempang_tutorial.pdf and follow from Section 0.\n'
+printf '    A pdf version of the tutorial is also available in tutorial/mempang_tutorial.pdf.\n'

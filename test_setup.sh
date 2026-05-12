@@ -35,12 +35,9 @@ EOF
     exit 1
 fi
 
-# 3. Python 3 with numpy and matplotlib
+# 3. Python 3 (stdlib only — figure scripts use code/_svgplot.py)
 if ! command -v python3 >/dev/null 2>&1; then
     fail "python3 not found in PATH"
-fi
-if ! python3 -c "import numpy, matplotlib" >/dev/null 2>&1; then
-    fail "Python is present but missing numpy and/or matplotlib. Install with: pip install numpy matplotlib"
 fi
 
 # 4. data files present and non-empty
@@ -65,5 +62,5 @@ for s in code/01_explore_ibs.py \
     [[ -x "$s" ]] || fail "$s missing or not executable (try: chmod +x $s)"
 done
 
-printf '\033[32mOK\033[0m  workshop ready (binaries run, Python deps present, data + scripts in place).\n'
+printf '\033[32mOK\033[0m  workshop ready (binaries run, python3 present, data + scripts in place).\n'
 printf '    open tutorial/mempang_tutorial.pdf and follow from Section 0.\n'

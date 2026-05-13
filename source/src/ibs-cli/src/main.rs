@@ -78,10 +78,6 @@ struct Args {
     #[arg(short = 'c', default_value = "0.999", value_parser = validate_cutoff)]
     cutoff: f64,
 
-    /// Metric (only informational for now)
-    #[arg(short = 'm', default_value = "cosine")]
-    metric: String,
-
     /// Total length of REGION if you use -region chr1 (without coordinates)
     #[arg(long = "region-length")]
     region_length: Option<u64>,
@@ -324,6 +320,9 @@ fn process_region(
         start_pos = end_pos + 1;
     }
 
+    let error_count = std::sync::atomic::AtomicUsize::new(0);
+    let total_windows = windows.len();
+
     let all_results: Vec<Vec<FilteredRow>> = windows
         .par_iter()
         .filter_map(|(start, end)| {
@@ -331,11 +330,21 @@ fn process_region(
                 Ok(rows) => Some(rows),
                 Err(e) => {
                     eprintln!("WARNING: skipping window {}:{}-{}: {}", region.chrom, start, end, e);
+                    error_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     None
                 }
             }
         })
         .collect();
+
+    let errors = error_count.load(std::sync::atomic::Ordering::Relaxed);
+    if errors > 0 {
+        eprintln!("WARNING: {} of {} windows failed processing in region {}",
+            errors, total_windows, region.chrom);
+        if total_windows > 0 && errors * 2 > total_windows {
+            bail!("Too many window failures ({}/{}) in region {}", errors, total_windows, region.chrom);
+        }
+    }
 
     Ok(all_results.into_iter().flatten().collect())
 }

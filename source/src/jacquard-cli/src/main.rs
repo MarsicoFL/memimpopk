@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(name = "jacquard", about = "Compute Jacquard delta coefficients from IBS windows")]
+#[command(name = "jacquard", version, about = "Compute Jacquard delta coefficients from IBS windows")]
 struct Args {
     /// IBS windows file (TSV with chrom/start/end/group.a/group.b)
     #[arg(long = "ibs")]
@@ -282,7 +282,7 @@ fn run(args: Args) -> Result<()> {
     );
 
     for (delta, &count) in counts.iter().enumerate().skip(1) {
-        let frac = count as f64 / total as f64;
+        let frac = if total > 0 { count as f64 / total as f64 } else { 0.0 };
         println!("Delta{}\t{:.8}\t(count={})", delta, frac, count);
     }
 

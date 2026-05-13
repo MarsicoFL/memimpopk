@@ -40,7 +40,7 @@ cp target/release/{ibs,ibd,ancestry,jacquard} ../bin/
 ## Provenance
 
 Snapshot of the `MarsicoFL/IMPOPk` workspace (workspace version
-`0.2.0`). Build flags match `bin/README.md`: no `target-cpu=native`,
+`0.1.0`). Build flags match `bin/README.md`: no `target-cpu=native`,
 no extra `RUSTFLAGS`. Binaries are dynamically linked against
 `glibc ≥ 2.31` (Ubuntu 20.04 +).
 

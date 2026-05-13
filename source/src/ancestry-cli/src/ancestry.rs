@@ -889,33 +889,6 @@ pub fn estimate_admixture_proportions(
     }
 }
 
-/// Define bat populations for Glossophaga case study
-pub fn glossophaga_populations() -> Vec<AncestralPopulation> {
-    vec![
-        AncestralPopulation {
-            name: "commissarisi".to_string(),
-            haplotypes: vec![
-                "commissarisi#HAP1".to_string(),
-                "commissarisi#HAP2".to_string(),
-            ],
-        },
-        AncestralPopulation {
-            name: "mutica".to_string(),
-            haplotypes: vec![
-                "mutica#A".to_string(),
-                "mutica#B".to_string(),
-            ],
-        },
-        AncestralPopulation {
-            name: "soricina".to_string(),
-            haplotypes: vec![
-                "soricina#HAP1".to_string(),
-                "soricina#HAP2".to_string(),
-            ],
-        },
-    ]
-}
-
 /// Filter ancestry segments by minimum LOD score.
 ///
 /// Removes segments whose LOD score is below the threshold.
@@ -933,25 +906,17 @@ mod tests {
     #[test]
     fn test_extract_sample_id() {
         assert_eq!(
-            extract_sample_id("TBG_5116#1#h1tg000001l:0-5000"),
-            "TBG_5116#1"
+            extract_sample_id("HG00097#1#h1tg000001l:0-5000"),
+            "HG00097#1"
         );
         assert_eq!(
-            extract_sample_id("commissarisi#HAP1#scaffold73:14346-25666"),
-            "commissarisi#HAP1"
+            extract_sample_id("popA#HAP1#scaffold73:14346-25666"),
+            "popA#HAP1"
         );
         assert_eq!(
-            extract_sample_id("mutica#A"),
-            "mutica#A"
+            extract_sample_id("popB#A"),
+            "popB#A"
         );
-    }
-
-    #[test]
-    fn test_glossophaga_populations() {
-        let pops = glossophaga_populations();
-        assert_eq!(pops.len(), 3);
-        assert_eq!(pops[0].name, "commissarisi");
-        assert_eq!(pops[0].haplotypes.len(), 2);
     }
 
     #[test]
@@ -1260,7 +1225,7 @@ mod tests {
     #[test]
     fn test_load_population_samples() {
         // Step 8: Test parsing population sample files
-        let sample_path = std::path::Path::new("/home/franco/Escritorio/trabajadores/HPRCv2-IBD/data/samples/AFR.txt");
+        let sample_path = std::path::Path::new("data/samples/AFR.txt");
         if sample_path.exists() {
             let samples = load_population_samples(sample_path).unwrap();
             assert!(!samples.is_empty(), "AFR.txt should contain samples");
@@ -1276,7 +1241,7 @@ mod tests {
     #[test]
     fn test_load_populations_from_dir() {
         // Step 8: Test loading all population files from directory
-        let samples_dir = std::path::Path::new("/home/franco/Escritorio/trabajadores/HPRCv2-IBD/data/samples");
+        let samples_dir = std::path::Path::new("data/samples");
         if samples_dir.exists() {
             let pops = load_populations_from_dir(samples_dir).unwrap();
             assert!(pops.len() >= 3, "Should have at least 3 populations, got {}", pops.len());

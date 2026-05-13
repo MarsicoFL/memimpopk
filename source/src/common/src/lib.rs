@@ -326,7 +326,7 @@ impl Window {
     /// assert_eq!(window.length(), 100);
     /// ```
     pub fn length(&self) -> u64 {
-        self.end - self.start + 1
+        self.end.saturating_sub(self.start) + 1
     }
 }
 

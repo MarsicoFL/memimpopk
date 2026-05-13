@@ -404,8 +404,7 @@ impl HmmParams {
 
                 if n_low > 0 {
                     let mean = sum_low / n_low as f64;
-                    let var = (sq_sum_low / n_low as f64) - mean * mean;
-                    // SAFETY: std is always positive due to .max(0.01)
+                    let var = ((sq_sum_low / n_low as f64) - mean * mean).max(0.0);
                     self.emission[0] = GaussianParams::new_unchecked(
                         mean,
                         var.sqrt().max(0.01),
@@ -414,8 +413,7 @@ impl HmmParams {
 
                 if n_high > 0 {
                     let mean = sum_high / n_high as f64;
-                    let var = (sq_sum_high / n_high as f64) - mean * mean;
-                    // SAFETY: std is always positive due to .max(0.001)
+                    let var = ((sq_sum_high / n_high as f64) - mean * mean).max(0.0);
                     self.emission[1] = GaussianParams::new_unchecked(
                         mean,
                         var.sqrt().max(0.001),
@@ -433,7 +431,7 @@ impl HmmParams {
                 self.emission[0].mean = sorted[q30_idx];
                 self.emission[1].mean = sorted[q90_idx.min(sorted.len() - 1)];
 
-                let overall_std = variance.sqrt();
+                let overall_std = variance.max(0.0).sqrt();
                 self.emission[0].std = overall_std.max(0.05);
                 self.emission[1].std = overall_std.max(0.01);
             }
@@ -582,12 +580,12 @@ impl HmmParams {
             if mean > prior_ibd.mean - 1.0 {
                 self.emission[1] = GaussianParams::new_unchecked(
                     mean,
-                    variance.sqrt().max(0.1),
+                    variance.max(0.0).sqrt().max(0.1),
                 );
             } else {
                 self.emission[0] = GaussianParams::new_unchecked(
                     mean,
-                    variance.sqrt().max(0.2),
+                    variance.max(0.0).sqrt().max(0.2),
                 );
             }
             return;
@@ -753,12 +751,12 @@ impl HmmParams {
             if mean > 0.9993 {
                 self.emission[1] = GaussianParams::new_unchecked(
                     mean,
-                    variance.sqrt().max(0.0005),
+                    variance.max(0.0).sqrt().max(0.0005),
                 );
             } else {
                 self.emission[0] = GaussianParams::new_unchecked(
                     mean,
-                    variance.sqrt().max(0.001),
+                    variance.max(0.0).sqrt().max(0.001),
                 );
             }
             return;
@@ -1069,12 +1067,12 @@ impl HmmParams {
             // Apply biological bounds to emission estimates
             // Non-IBD (state 0): mean should be near 1-pi, std bounded
             let bounded_mu0 = mu[0].clamp(prior_non_ibd.mean - 0.005, 0.9993);
-            let bounded_std0 = sigma_sq[0].sqrt().clamp(0.0003, 0.005);
+            let bounded_std0 = sigma_sq[0].max(0.0).sqrt().clamp(0.0003, 0.005);
             self.emission[0] = GaussianParams::new_unchecked(bounded_mu0, bounded_std0);
 
             // IBD (state 1): mean should be very high, std bounded
             let bounded_mu1 = mu[1].clamp(0.9990, 1.0);
-            let bounded_std1 = sigma_sq[1].sqrt().clamp(0.0002, 0.002);
+            let bounded_std1 = sigma_sq[1].max(0.0).sqrt().clamp(0.0002, 0.002);
             self.emission[1] = GaussianParams::new_unchecked(bounded_mu1, bounded_std1);
 
             // Ensure state 0 mean < state 1 mean (identifiability)
@@ -1235,14 +1233,14 @@ impl HmmParams {
             // Mean: [prior - 2.0, prior + 2.0] (±2 logit units ≈ ±0.003 in raw near 0.999)
             // Std: [0.2, 3.0] (delta method gives ~1.0 for typical populations)
             let bounded_mu0 = mu[0].clamp(prior_logit.mean - 2.0, prior_logit.mean + 2.0);
-            let bounded_std0 = sigma_sq[0].sqrt().clamp(0.2, 3.0);
+            let bounded_std0 = sigma_sq[0].max(0.0).sqrt().clamp(0.2, 3.0);
             self.emission[0] = GaussianParams::new_unchecked(bounded_mu0, bounded_std0);
 
             // Logit-space bounds for IBD (state 1):
             // Mean: [prior IBD - 1.0, LOGIT_CAP] (matches observation capping)
             // Std: [0.2, 3.0]
             let bounded_mu1 = mu[1].clamp(ibd_logit.mean - 1.0, LOGIT_CAP);
-            let bounded_std1 = sigma_sq[1].sqrt().clamp(0.2, 3.0);
+            let bounded_std1 = sigma_sq[1].max(0.0).sqrt().clamp(0.2, 3.0);
             self.emission[1] = GaussianParams::new_unchecked(bounded_mu1, bounded_std1);
 
             // Ensure state 0 mean < state 1 mean (identifiability)
@@ -1417,11 +1415,11 @@ impl HmmParams {
 
             // Apply biological bounds to emission estimates
             let bounded_mu0 = mu[0].clamp(prior_non_ibd.mean - 0.005, 0.9993);
-            let bounded_std0 = sigma_sq[0].sqrt().clamp(0.0003, 0.005);
+            let bounded_std0 = sigma_sq[0].max(0.0).sqrt().clamp(0.0003, 0.005);
             self.emission[0] = GaussianParams::new_unchecked(bounded_mu0, bounded_std0);
 
             let bounded_mu1 = mu[1].clamp(0.9990, 1.0);
-            let bounded_std1 = sigma_sq[1].sqrt().clamp(0.0002, 0.002);
+            let bounded_std1 = sigma_sq[1].max(0.0).sqrt().clamp(0.0002, 0.002);
             self.emission[1] = GaussianParams::new_unchecked(bounded_mu1, bounded_std1);
 
             // Ensure state 0 mean < state 1 mean (identifiability)
@@ -3057,7 +3055,7 @@ pub fn segment_posterior_std(posteriors: &[f64], start_idx: usize, end_idx: usiz
     }
     let mean: f64 = seg.iter().sum::<f64>() / n as f64;
     let variance: f64 = seg.iter().map(|&p| (p - mean).powi(2)).sum::<f64>() / (n - 1) as f64;
-    variance.sqrt()
+    variance.max(0.0).sqrt()
 }
 
 /// Extract IBD segments with posterior-based filtering and LOD scores.
@@ -5004,7 +5002,7 @@ pub fn estimate_ibd_emission_std(
 
     let mean: f64 = top.iter().sum::<f64>() / top.len() as f64;
     let variance: f64 = top.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / top.len() as f64;
-    let std = variance.sqrt().clamp(min_std, max_std);
+    let std = variance.max(0.0).sqrt().clamp(min_std, max_std);
 
     Some(std)
 }

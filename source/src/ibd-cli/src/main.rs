@@ -305,7 +305,7 @@ struct Args {
     /// columns). IBD regions have symmetric coverage (ratio ~1.0) while
     /// non-IBD regions may have asymmetric alignments (ratio < 1.0).
     /// Requires input data with group.a.length and group.b.length columns
-    /// (produced by impg similarity).
+    /// (produced by the `ibs` wrapper around impg similarity).
     #[arg(long = "coverage-feature")]
     coverage_feature: bool,
 
@@ -463,14 +463,18 @@ fn collect_identities(
     region: &Region,
     mut ibs_output: Option<&mut BufWriter<File>>,
 ) -> Result<HashMap<(String, String), Vec<WindowRecord>>> {
-    let ref_name = args.ref_name.as_deref().expect("ref_name required for impg mode");
+    let ref_name = args.ref_name.as_deref()
+        .ok_or_else(|| anyhow::anyhow!("ref_name required for impg mode"))?;
     let ref_prefix = format!("{}#", ref_name);
     let mut pair_data: HashMap<(String, String), Vec<WindowRecord>> = HashMap::new();
     let mut first_window = true;
 
-    let sequence_files = args.sequence_files.as_deref().expect("sequence-files required for impg mode");
-    let align = args.align.as_deref().expect("alignment required for impg mode");
-    let subset_list = args.subset_list.as_deref().expect("subset-sequence-list required for impg mode");
+    let sequence_files = args.sequence_files.as_deref()
+        .ok_or_else(|| anyhow::anyhow!("sequence-files required for impg mode"))?;
+    let align = args.align.as_deref()
+        .ok_or_else(|| anyhow::anyhow!("alignment required for impg mode"))?;
+    let subset_list = args.subset_list.as_deref()
+        .ok_or_else(|| anyhow::anyhow!("subset-sequence-list required for impg mode"))?;
 
     for window in WindowIterator::new(region, args.window_size) {
         let ref_region = format!("{}#0#{}:{}-{}", ref_name, region.chrom, window.start, window.end);
@@ -1322,8 +1326,9 @@ fn call_ibd_segments(
         None
     };
 
-    // Convert HashMap to Vec for parallel iteration
-    let pairs: Vec<_> = pair_data.into_iter().collect();
+    // Convert HashMap to Vec for parallel iteration, sorted for deterministic output
+    let mut pairs: Vec<_> = pair_data.into_iter().collect();
+    pairs.sort_by(|a, b| a.0.cmp(&b.0));
 
     // Process pairs in parallel
     let results: Vec<PairResult> = pairs

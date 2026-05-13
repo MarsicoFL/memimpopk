@@ -97,7 +97,7 @@ struct Args {
     /// Minimum identity threshold for including a window in HMM inference.
     /// Windows with identity below this threshold are discarded as alignment gaps.
     /// Useful for pangenome data where unaligned regions have very low identity.
-    /// Default 0.0 (no filtering). Recommended: 0.5 for pangenome data.
+    /// Default 0.0 (no filtering). Recommended: 0.9 for pangenome data.
     #[arg(long = "identity-floor", default_value = "0.0")]
     identity_floor: f64,
 
@@ -497,7 +497,7 @@ fn process_pair(
 /// A genomic region to exclude from IBD output.
 #[derive(Debug, Clone)]
 struct ExcludeRegion {
-    _chrom: String,
+    chrom: String,
     start: u64,
     end: u64,
 }
@@ -522,7 +522,7 @@ fn parse_exclude_regions(path: &PathBuf) -> Result<Vec<ExcludeRegion>> {
         let start: u64 = fields[1].parse().context("Invalid start coordinate")?;
         let end: u64 = fields[2].parse().context("Invalid end coordinate")?;
         regions.push(ExcludeRegion {
-            _chrom: fields[0].to_string(),
+            chrom: fields[0].to_string(),
             start,
             end,
         });
@@ -531,10 +531,10 @@ fn parse_exclude_regions(path: &PathBuf) -> Result<Vec<ExcludeRegion>> {
     Ok(regions)
 }
 
-/// Check if a segment overlaps any exclusion region.
-fn overlaps_excluded(seg_start: u64, seg_end: u64, regions: &[ExcludeRegion]) -> bool {
+/// Check if a segment overlaps any exclusion region on the same chromosome.
+fn overlaps_excluded(seg_chrom: &str, seg_start: u64, seg_end: u64, regions: &[ExcludeRegion]) -> bool {
     for r in regions {
-        if seg_start < r.end && seg_end > r.start {
+        if r.chrom == seg_chrom && seg_start < r.end && seg_end > r.start {
             return true;
         }
     }
@@ -806,7 +806,7 @@ fn run() -> Result<()> {
     // Apply exclusion region filter if specified
     if let Some(ref regions) = exclude_regions {
         let before = all_segments.len();
-        all_segments.retain(|seg| !overlaps_excluded(seg.start, seg.end, regions));
+        all_segments.retain(|seg| !overlaps_excluded(&seg.chrom, seg.start, seg.end, regions));
         let removed = before - all_segments.len();
         if removed > 0 {
             eprintln!("Exclude regions: removed {} of {} segments ({:.1}%)",

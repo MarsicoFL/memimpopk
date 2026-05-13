@@ -457,10 +457,8 @@ chr20\t775876\t826094\t2.89\t3.20\t45\t1\t0";
 
     #[test]
     fn test_parse_rfmix_file() {
-        // Test file-based parsing if the real file exists
-        let path = std::path::Path::new(
-            "/home/franco/Escritorio/trabajadores/HPRCv2-IBD/experiments/phase2_cases/ancestryBenchmarking/rfmix_test/rfmix_HG00733_chr20_v4.msp.tsv"
-        );
+        // Test file-based parsing if a real RFMix file exists in the data directory
+        let path = std::path::Path::new("data/rfmix_test/rfmix_HG00733_chr20_v4.msp.tsv");
         if path.exists() {
             let result = parse_rfmix_msp(path).unwrap();
 

@@ -1,3 +1,4 @@
+#![allow(clippy::manual_is_multiple_of)]
 //! Segment concordance metrics for IBD validation.
 //!
 //! Provides quantitative comparison between IBD segment sets (e.g., our tool vs hap-ibd):
@@ -398,12 +399,12 @@ pub fn boundary_accuracy(
     start_distances.sort_unstable();
     end_distances.sort_unstable();
 
-    let median_start = if n.is_multiple_of(2) {
+    let median_start = if n % 2 == 0 {
         (start_distances[n / 2 - 1] + start_distances[n / 2]) as f64 / 2.0
     } else {
         start_distances[n / 2] as f64
     };
-    let median_end = if n.is_multiple_of(2) {
+    let median_end = if n % 2 == 0 {
         (end_distances[n / 2 - 1] + end_distances[n / 2]) as f64 / 2.0
     } else {
         end_distances[n / 2] as f64

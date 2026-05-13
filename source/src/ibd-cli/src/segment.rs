@@ -1,3 +1,4 @@
+#![allow(clippy::manual_is_multiple_of)]
 //! Segment Detection and Merging Algorithms
 //!
 //! This module provides tools for detecting and managing IBS/IBD segments
@@ -426,7 +427,7 @@ pub fn segment_length_distribution(segments: &[Segment]) -> SegmentLengthStats {
     let total: u64 = lengths.iter().sum();
     let mean = total as f64 / count as f64;
 
-    let median = if count.is_multiple_of(2) {
+    let median = if count % 2 == 0 {
         (lengths[count / 2 - 1] + lengths[count / 2]) as f64 / 2.0
     } else {
         lengths[count / 2] as f64

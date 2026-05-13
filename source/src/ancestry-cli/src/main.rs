@@ -42,7 +42,7 @@ fn validate_non_negative_f64(val: &str) -> Result<f64, String> {
 use hprc_ancestry_cli::{
     AncestralPopulation, AncestryHmmParams, AncestryObservation, EmissionModel,
     AncestryGeneticMap, DecodingMethod, LearnedParams,
-    extract_ancestry_segments, forward_backward, glossophaga_populations,
+    extract_ancestry_segments, forward_backward,
     forward_backward_with_genetic_map, viterbi_with_genetic_map,
     posterior_decode_with_genetic_map,
     precompute_log_emissions, smooth_log_emissions_weighted, smooth_observations,
@@ -129,7 +129,7 @@ RECOMMENDED PARAMETER PRESETS:
   Key findings from validation against RFMix (chr20, 15 AMR samples):
     - Emission model 'max' is critical: 93.2% vs mean 88.7% vs median 86.4%
     - Auto-estimation (--estimate-params) achieves near-optimal 92.9% concordance
-    - Baum-Welch: a few iterations help (auto-configure uses 3); long runs can drift
+    - Baum-Welch training is counterproductive (degrades concordance by 2-3%)
     - Posterior decoding = Viterbi (signal too weak for disagreement)
     - Normalize-emissions is catastrophic (destroys the signal)
     - Coverage-ratio feature provides marginal improvement at best
@@ -144,11 +144,11 @@ struct Args {
     #[arg(short = 'a', long = "alignment", required_unless_present = "similarity_file")]
     alignment: Option<PathBuf>,
 
-    /// Reference name for coordinate system (e.g., "soricina#HAP1")
+    /// Reference name for coordinate system (e.g., "CHM13")
     #[arg(short = 'r', long = "reference", required_unless_present = "similarity_file")]
     reference: Option<String>,
 
-    /// Region to analyze (e.g., "super15" or "super15:1-1000000")
+    /// Region to analyze (e.g., "chr12" or "chr12:1-133000000")
     /// Mutually exclusive with --bed
     #[arg(long = "region")]
     region: Option<String>,
@@ -167,7 +167,6 @@ struct Args {
     query_samples: PathBuf,
 
     /// Population definition file (TSV: pop_name, haplotype_id)
-    /// If not provided, uses default Glossophaga populations
     #[arg(long = "populations")]
     populations: Option<PathBuf>,
 
@@ -1179,12 +1178,10 @@ fn main() -> Result<()> {
         .ok();
 
     // Load populations
-    let populations = if let Some(pop_file) = &args.populations {
-        load_populations(pop_file)?
-    } else {
-        eprintln!("Using default populations");
-        glossophaga_populations()
-    };
+    let pop_file = args.populations.as_ref().ok_or_else(|| {
+        anyhow::anyhow!("--populations is required (TSV: pop_name, haplotype_id)")
+    })?;
+    let populations = load_populations(pop_file)?;
 
     eprintln!("Populations: {:?}", populations.iter().map(|p| &p.name).collect::<Vec<_>>());
 
@@ -1212,12 +1209,14 @@ fn main() -> Result<()> {
             similarity_data.entry(sample).or_default().extend(obs);
         }
     } else {
-        let ref_name = args.reference.as_ref().expect("--reference required without --similarity-file");
+        let ref_name = args.reference.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("--reference required without --similarity-file"))?;
         // Parse regions: either single --region or multi-region --bed
         let regions: Vec<(String, u64, u64)> = if let Some(bed_path) = &args.bed {
             parse_bed_regions(bed_path, ref_name)?
         } else {
-            let region_str = args.region.as_ref().expect("--region or --bed required");
+            let region_str = args.region.as_ref()
+                .ok_or_else(|| anyhow::anyhow!("--region or --bed required"))?;
             vec![parse_region(region_str, ref_name, args.region_length)?]
         };
 
@@ -1229,8 +1228,10 @@ fn main() -> Result<()> {
                 (*end - *start) as f64 / 1_000_000.0);
 
             let region_data = compute_similarities(
-                args.sequence_files.as_ref().expect("--sequence-files required without --similarity-file"),
-                args.alignment.as_ref().expect("--alignment required without --similarity-file"),
+                args.sequence_files.as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("--sequence-files required without --similarity-file"))?,
+                args.alignment.as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("--alignment required without --similarity-file"))?,
                 ref_name,
                 chrom,
                 *start,
@@ -3351,7 +3352,11 @@ fn main() -> Result<()> {
             let child_to_parent_idx: Vec<usize> = populations.iter()
                 .map(|p| {
                     let parent_name = &parent_map[&p.name];
-                    parent_pops.iter().position(|pp| &pp.name == parent_name).unwrap()
+                    parent_pops.iter().position(|pp| &pp.name == parent_name)
+                        .unwrap_or_else(|| {
+                            eprintln!("WARNING: parent population '{}' not found in population groups, defaulting to index 0", parent_name);
+                            0
+                        })
                 })
                 .collect();
             let n_parent_pops = parent_pops.len();
@@ -3504,12 +3509,12 @@ fn main() -> Result<()> {
             for seg in segments {
                 // BED format: chrom, start (0-based), end, name, score (0-1000)
                 // Score is posterior * 1000, clamped to [0, 1000]
-                let score = (seg.mean_posterior.unwrap_or(0.0) * 1000.0).round().min(1000.0) as u32;
+                let score = (seg.mean_posterior.unwrap_or(0.0) * 1000.0).round().clamp(0.0, 1000.0) as u32;
                 writeln!(
                     bed_out,
                     "{}\t{}\t{}\t{}:{}\t{}",
                     seg.chrom,
-                    seg.start,
+                    seg.start.saturating_sub(1), // Convert 1-based to BED 0-based
                     seg.end,
                     seg.sample,
                     seg.ancestry_name,
